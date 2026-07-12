@@ -51,7 +51,7 @@ void main() {
     );
     final out = await pipeline.run(Stream.fromIterable([fix(37.5, 127.0)])).toList();
     expect(out.length, 1);
-    expect(out.first.map((r) => r.poi.id), ['a']);
+    expect(out.first.recommendations.map((r) => r.poi.id), ['a']);
   });
 
   test('Provider 예외는 삼키고 빈 방출을 하지 않는다', () async {
@@ -65,7 +65,7 @@ void main() {
     expect(out, isEmpty); // 방출 없음(직전 결과 유지)
   });
 
-  test('한 번 추천된 POI는 다음 위치에서 중복 방출되지 않는다', () async {
+  test('같은 POI가 다음 위치 업데이트에도 계속 포함된다(핀이 사라지지 않는다)', () async {
     final registry = ProviderRegistry()
       ..register(FakeProvider(() => [poi('a', 37.502)]));
     final pipeline = RecommendationPipeline(
@@ -73,12 +73,37 @@ void main() {
       registry: registry,
       recommendEngine: RecommendEngine(),
     );
-    // 두 위치 모두 같은 POI 'a'만 반환 → 두 번째엔 억제되어 빈 리스트
+    // 두 위치 모두 같은 POI 'a'를 반환 → 전체 핀 필드이므로 두 번째에도 계속 포함되어야 한다.
     final out = await pipeline
         .run(Stream.fromIterable([fix(37.5, 127.0), fix(37.503, 127.0)]))
         .toList();
     expect(out.length, 2);
-    expect(out[0].map((r) => r.poi.id), ['a']);
-    expect(out[1], isEmpty);
+    expect(out[0].recommendations.map((r) => r.poi.id), ['a']);
+    expect(out[1].recommendations.map((r) => r.poi.id), ['a']);
+  });
+
+  test('성공했으나 후보가 비면 빈 recommendations로 emit된다(카메라 추적 유지)', () async {
+    final registry = ProviderRegistry()..register(FakeProvider(() => []));
+    final pipeline = RecommendationPipeline(
+      locationEngine: LocationEngine(minMoveMeters: 200),
+      registry: registry,
+      recommendEngine: RecommendEngine(),
+    );
+    final out = await pipeline.run(Stream.fromIterable([fix(37.5, 127.0)])).toList();
+    expect(out.length, 1);
+    expect(out.first.recommendations, isEmpty);
+    expect(out.first.location.position, LatLng(37.5, 127.0));
+  });
+
+  test('emit된 RecommendationUpdate.location이 입력 위치와 일치한다', () async {
+    final registry = ProviderRegistry()
+      ..register(FakeProvider(() => [poi('a', 37.502)]));
+    final pipeline = RecommendationPipeline(
+      locationEngine: LocationEngine(minMoveMeters: 200),
+      registry: registry,
+      recommendEngine: RecommendEngine(),
+    );
+    final out = await pipeline.run(Stream.fromIterable([fix(37.5, 127.0)])).toList();
+    expect(out.first.location.position, LatLng(37.5, 127.0));
   });
 }

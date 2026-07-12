@@ -6,7 +6,15 @@ import '../location/raw_fix.dart';
 import '../poi/poi_provider.dart';
 import '../recommend/recommend_engine.dart';
 
-/// 위치 스트림을 받아 활성 Provider 호출→랭킹→중복억제까지 배선한다.
+/// 한 위치 이벤트에 대한 추천 결과 묶음. 지도는 위치로 카메라를 따라가고
+/// recommendations로 핀을 그린다.
+class RecommendationUpdate {
+  final LocationEvent location;
+  final List<Recommendation> recommendations;
+  const RecommendationUpdate(this.location, this.recommendations);
+}
+
+/// 위치 스트림을 받아 활성 Provider 호출→랭킹까지 배선한다.
 class RecommendationPipeline {
   final LocationEngine locationEngine;
   final ProviderRegistry registry;
@@ -20,30 +28,27 @@ class RecommendationPipeline {
     this.searchRadiusMeters = 2000,
   });
 
-  Stream<List<Recommendation>> run(Stream<RawFix> fixes) async* {
+  Stream<RecommendationUpdate> run(Stream<RawFix> fixes) async* {
     await for (final loc in locationEngine.process(fixes)) {
       final candidates = await _gather(loc);
-      if (candidates == null) continue; // 모든 Provider 실패 → 방출 안 함
+      if (candidates == null) continue; // 전부 실패 → 직전 유지
       final ranked = recommendEngine.rank(loc, candidates);
-      recommendEngine.markShown(ranked.map((r) => r.poi.id));
-      yield ranked;
+      yield RecommendationUpdate(loc, ranked);
     }
   }
 
-  /// 활성 Provider들을 병렬 호출해 합친 후보를 반환한다. 후보가 하나도 없으면(레지스트리가
-  /// 비었거나, 모든 Provider가 예외를 던졌거나, 모든 Provider가 빈 결과를 반환한 경우를
-  /// 구분하지 않고 모두) null을 반환한다.
+  /// 활성 Provider들을 병렬 호출. 개별 실패는 null로 표시.
+  /// 모든 Provider가 실패하면 null 반환(직전 결과 유지). 하나라도 성공하면
+  /// (결과가 비었더라도) 성공한 것들의 합집합 반환.
   Future<List<Poi>?> _gather(LocationEvent loc) async {
-    final futures = registry.all.map((p) async {
+    final results = await Future.wait(registry.all.map((p) async {
       try {
         return await p.nearby(loc, radiusMeters: searchRadiusMeters);
       } catch (_) {
-        return <Poi>[]; // 개별 Provider 실패는 빈 결과로
+        return null; // 이 Provider는 실패
       }
-    });
-    final results = await Future.wait(futures);
-    final merged = results.expand((e) => e).toList();
-    if (merged.isEmpty) return null;
-    return merged;
+    }));
+    if (results.isEmpty || results.every((r) => r == null)) return null;
+    return results.whereType<List<Poi>>().expand((e) => e).toList();
   }
 }

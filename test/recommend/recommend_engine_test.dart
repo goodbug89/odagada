@@ -32,16 +32,6 @@ void main() {
     expect(out.first.poi.id, 'ahead');
   });
 
-  test('이미 표시된 POI는 다음 랭킹에서 제외', () {
-    final e = RecommendEngine();
-    final a = poi('a', 37.502, 127.0, dist: 100);
-    final b = poi('b', 37.5025, 127.0, dist: 150);
-    final first = e.rank(north(), [a, b]);
-    e.markShown(first.map((r) => r.poi.id));
-    final second = e.rank(north(), [a, b]);
-    expect(second, isEmpty);
-  });
-
   test('maxResults 개수로 제한', () {
     final e = RecommendEngine(maxResults: 2);
     final pois = List.generate(

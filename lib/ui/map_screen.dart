@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../core/models/poi.dart';
-import '../core/models/recommendation.dart';
 import '../location/location_source.dart';
 import '../pipeline/recommendation_pipeline.dart';
 import '../poi/poi_provider.dart';
@@ -34,6 +33,7 @@ class _MapScreenState extends State<MapScreen> {
   StreamSubscription? _sub;
   Poi? _selected;
   String? _error;
+  RecommendationUpdate? _lastUpdate;
 
   @override
   void initState() {
@@ -48,13 +48,17 @@ class _MapScreenState extends State<MapScreen> {
       setState(() => _error = '위치 권한이 필요합니다. 설정에서 허용해 주세요.');
       return;
     }
-    _sub = widget.pipeline.run(widget.locationSource.stream()).listen(_onRecs);
+    _sub = widget.pipeline.run(widget.locationSource.stream()).listen(_onUpdate);
   }
 
-  void _onRecs(List<Recommendation> recs) {
-    if (recs.isEmpty) return;
-    _map?.setPins(recs);
-    _map?.moveCamera(recs.first.poi.position);
+  void _onUpdate(RecommendationUpdate u) {
+    _lastUpdate = u;
+    _applyToMap(u);
+  }
+
+  void _applyToMap(RecommendationUpdate u) {
+    _map?.setPins(u.recommendations); // 전체 현재 추천 = 안정적인 핀 필드
+    _map?.moveCamera(u.location.position); // 카메라는 차량(현재 위치) 추적
   }
 
   void _onPinTap(Poi poi) => setState(() => _selected = poi);
@@ -85,7 +89,11 @@ class _MapScreenState extends State<MapScreen> {
       body: Stack(
         children: [
           KakaoMapView(
-            onReady: (c) => _map = c,
+            onReady: (c) {
+              _map = c;
+              final last = _lastUpdate;
+              if (last != null) _applyToMap(last);
+            },
             onPinTap: _onPinTap,
           ),
           if (_selected != null)

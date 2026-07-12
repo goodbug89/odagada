@@ -3,12 +3,11 @@ import '../core/models/poi.dart';
 import '../core/models/recommendation.dart';
 import '../core/geo/geo_math.dart';
 
-/// 후보 POI를 진행방향·거리·평점으로 랭킹하고, 이미 본 곳을 억제하는 순수 엔진.
+/// 후보 POI를 진행방향·거리·평점으로 랭킹하는 순수 엔진.
 class RecommendEngine {
   final double forwardHalfAngleDeg;
   final double maxDistanceMeters;
   final int maxResults;
-  final Set<String> _shown = {};
 
   RecommendEngine({
     this.forwardHalfAngleDeg = 60,
@@ -16,13 +15,9 @@ class RecommendEngine {
     this.maxResults = 10,
   });
 
-  void markShown(Iterable<String> ids) => _shown.addAll(ids);
-  void reset() => _shown.clear();
-
   List<Recommendation> rank(LocationEvent loc, List<Poi> candidates) {
     final scored = <Recommendation>[];
     for (final p in candidates) {
-      if (_shown.contains(p.id)) continue;
       if (p.distanceMeters > maxDistanceMeters) continue;
       scored.add(Recommendation(poi: p, score: _score(loc, p)));
     }
