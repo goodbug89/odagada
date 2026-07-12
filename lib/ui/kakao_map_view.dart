@@ -25,13 +25,6 @@ class _KakaoMapViewState extends State<KakaoMapView> implements MapController {
   @override
   void initState() {
     super.initState();
-    _init();
-  }
-
-  Future<void> _init() async {
-    var html = await rootBundle.loadString('assets/kakao_map.html');
-    html = html.replaceAll('__KAKAO_JS_KEY__', AppConfig.kakaoJsAppKey);
-
     _web = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..addJavaScriptChannel('MapReady',
@@ -39,8 +32,24 @@ class _KakaoMapViewState extends State<KakaoMapView> implements MapController {
       ..addJavaScriptChannel('PinChannel', onMessageReceived: (msg) {
         final poi = _findPoi(msg.message);
         if (poi != null) widget.onPinTap(poi);
-      })
-      ..loadHtmlString(html);
+      });
+    _loadHtml();
+  }
+
+  Future<void> _loadHtml() async {
+    try {
+      var html = await rootBundle.loadString('assets/kakao_map.html');
+      html = html.replaceAll('__KAKAO_JS_KEY__', AppConfig.kakaoJsAppKey);
+      await _web.loadHtmlString(html);
+    } catch (e, st) {
+      // 에셋 누락이나 빈 키(StateError)가 조용히 삼켜지지 않도록 표면화한다.
+      FlutterError.reportError(FlutterErrorDetails(
+        exception: e,
+        stack: st,
+        library: 'odagada',
+        context: ErrorDescription('카카오맵 로드 실패'),
+      ));
+    }
   }
 
   Poi? _findPoi(String id) {
