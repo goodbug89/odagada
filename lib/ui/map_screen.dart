@@ -43,6 +43,7 @@ class _MapScreenState extends State<MapScreen> {
 
   Future<void> _start() async {
     final ok = await widget.locationSource.ensurePermission();
+    if (!mounted) return;
     if (!ok) {
       setState(() => _error = '위치 권한이 필요합니다. 설정에서 허용해 주세요.');
       return;
