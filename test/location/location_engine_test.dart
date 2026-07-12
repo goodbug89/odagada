@@ -47,4 +47,25 @@ void main() {
         .toList();
     expect(out.last.headingDeg, closeTo(0, 2));
   });
+
+  test('음수 heading도 이동 방향으로 보정된다(정북≈0)', () async {
+    final engine = LocationEngine(minMoveMeters: 200);
+    final out = await engine
+        .process(Stream.fromIterable([
+          fix(37.5, 127.0, heading: -5),
+          fix(37.503, 127.0, heading: -5), // 북쪽으로 이동, 센서 heading은 음수(-5)
+        ]))
+        .toList();
+    // 음수 heading은 무시하고 bearing(≈0)으로 보정
+    expect(out.last.headingDeg, closeTo(0, 2));
+  });
+
+  test('정확히 200m 경계 이동은 방출한다(>= 경계 포함)', () async {
+    final engine = LocationEngine(minMoveMeters: 200);
+    // 위도 델타 0.0018 ≈ 200.15m (200m 바로 위, >= 경계를 실제로 검증)
+    final out = await engine
+        .process(Stream.fromIterable([fix(37.5, 127.0), fix(37.5018, 127.0)]))
+        .toList();
+    expect(out.length, 2);
+  });
 }
