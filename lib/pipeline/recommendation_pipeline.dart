@@ -30,7 +30,9 @@ class RecommendationPipeline {
     }
   }
 
-  /// 활성 Provider들을 병렬 호출. 하나라도 성공하면 합집합, 전부 실패면 null.
+  /// 활성 Provider들을 병렬 호출해 합친 후보를 반환한다. 후보가 하나도 없으면(레지스트리가
+  /// 비었거나, 모든 Provider가 예외를 던졌거나, 모든 Provider가 빈 결과를 반환한 경우를
+  /// 구분하지 않고 모두) null을 반환한다.
   Future<List<Poi>?> _gather(LocationEvent loc) async {
     final futures = registry.all.map((p) async {
       try {
@@ -41,10 +43,6 @@ class RecommendationPipeline {
     });
     final results = await Future.wait(futures);
     final merged = results.expand((e) => e).toList();
-    final anySucceeded = registry.all.isNotEmpty;
-    if (!anySucceeded) return null;
-    // 전부 예외였는지 구분: 모든 결과가 비었고 실제로 예외였던 경우도 빈 리스트가 되지만,
-    // 억제 상태 오염을 막기 위해 빈 후보는 방출하지 않고 직전 유지.
     if (merged.isEmpty) return null;
     return merged;
   }

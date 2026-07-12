@@ -36,7 +36,7 @@ class KakaoClient {
       'Authorization': 'KakaoAK $restApiKey',
     });
     if (res.statusCode != 200) {
-      throw KakaoApiException(res.statusCode, res.body);
+      throw KakaoApiException(res.statusCode, utf8.decode(res.bodyBytes));
     }
     final body = jsonDecode(utf8.decode(res.bodyBytes)) as Map<String, dynamic>;
     final docs = (body['documents'] as List).cast<Map<String, dynamic>>();

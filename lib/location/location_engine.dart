@@ -14,7 +14,7 @@ class LocationEngine {
     await for (final f in fixes) {
       final isFirst = lastEmitted == null;
       final moved =
-          isFirst ? double.infinity : GeoMath.distanceMeters(lastEmitted!, f.position);
+          isFirst ? double.infinity : GeoMath.distanceMeters(lastEmitted, f.position);
       if (isFirst || moved >= minMoveMeters) {
         yield LocationEvent(
           position: f.position,
