@@ -1,2 +1,48 @@
-<!-- placeholder — Task 6에서 카카오맵 JS SDK 로드 HTML로 교체됨 -->
-<!DOCTYPE html><html><body></body></html>
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <style>html,body,#map{margin:0;padding:0;width:100%;height:100%;}</style>
+</head>
+<body>
+  <div id="map"></div>
+  <script>
+    // Flutter가 __KAKAO_JS_KEY__ 를 실제 키로 치환해 로드한다.
+    var script = document.createElement('script');
+    script.src = 'https://dapi.kakao.com/v2/maps/sdk.js?appkey=__KAKAO_JS_KEY__&autoload=false';
+    script.onload = function () {
+      kakao.maps.load(function () {
+        window._map = new kakao.maps.Map(document.getElementById('map'), {
+          center: new kakao.maps.LatLng(37.5665, 126.9780),
+          level: 4
+        });
+        window._markers = [];
+        // Flutter → JS: 카메라 이동
+        window.moveCamera = function (lat, lng) {
+          window._map.setCenter(new kakao.maps.LatLng(lat, lng));
+        };
+        // Flutter → JS: 핀 세팅. items = [{id,name,lat,lng}]
+        window.setPins = function (jsonStr) {
+          var items = JSON.parse(jsonStr);
+          window._markers.forEach(function (m) { m.setMap(null); });
+          window._markers = [];
+          items.forEach(function (it) {
+            var marker = new kakao.maps.Marker({
+              position: new kakao.maps.LatLng(it.lat, it.lng)
+            });
+            marker.setMap(window._map);
+            kakao.maps.event.addListener(marker, 'click', function () {
+              // JS → Flutter: 핀 탭 통지
+              PinChannel.postMessage(it.id);
+            });
+            window._markers.push(marker);
+          });
+        };
+        MapReady.postMessage('ready');
+      });
+    };
+    document.head.appendChild(script);
+  </script>
+</body>
+</html>
