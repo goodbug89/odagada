@@ -1,0 +1,102 @@
+import 'dart:async';
+import 'package:flutter/material.dart';
+import '../core/models/poi.dart';
+import '../core/models/recommendation.dart';
+import '../location/location_source.dart';
+import '../pipeline/recommendation_pipeline.dart';
+import '../poi/poi_provider.dart';
+import 'kakao_map_view.dart';
+import 'map_view.dart';
+import 'info_card.dart';
+import 'module_selector.dart';
+import 'navigation_launcher.dart';
+
+class MapScreen extends StatefulWidget {
+  final LocationSource locationSource;
+  final RecommendationPipeline pipeline;
+  final ProviderRegistry registry;
+  final NavigationLauncher navigationLauncher;
+
+  const MapScreen({
+    super.key,
+    required this.locationSource,
+    required this.pipeline,
+    required this.registry,
+    required this.navigationLauncher,
+  });
+
+  @override
+  State<MapScreen> createState() => _MapScreenState();
+}
+
+class _MapScreenState extends State<MapScreen> {
+  MapController? _map;
+  StreamSubscription? _sub;
+  Poi? _selected;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _start();
+  }
+
+  Future<void> _start() async {
+    final ok = await widget.locationSource.ensurePermission();
+    if (!ok) {
+      setState(() => _error = '위치 권한이 필요합니다. 설정에서 허용해 주세요.');
+      return;
+    }
+    _sub = widget.pipeline.run(widget.locationSource.stream()).listen(_onRecs);
+  }
+
+  void _onRecs(List<Recommendation> recs) {
+    if (recs.isEmpty) return;
+    _map?.setPins(recs);
+    _map?.moveCamera(recs.first.poi.position);
+  }
+
+  void _onPinTap(Poi poi) => setState(() => _selected = poi);
+
+  @override
+  void dispose() {
+    _sub?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_error != null) {
+      return Scaffold(body: Center(child: Text(_error!)));
+    }
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('오다가다'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.tune),
+            onPressed: () => Navigator.of(context).push(MaterialPageRoute(
+              builder: (_) => ModuleSelector(registry: widget.registry),
+            )),
+          ),
+        ],
+      ),
+      body: Stack(
+        children: [
+          KakaoMapView(
+            onReady: (c) => _map = c,
+            onPinTap: _onPinTap,
+          ),
+          if (_selected != null)
+            Align(
+              alignment: Alignment.bottomCenter,
+              child: InfoCard(
+                poi: _selected!,
+                onNavigate: () => widget.navigationLauncher.launch(_selected!),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
