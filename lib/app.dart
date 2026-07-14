@@ -7,7 +7,7 @@ import 'pipeline/recommendation_pipeline.dart';
 import 'poi/poi_provider.dart';
 import 'poi/kakao_client.dart';
 import 'poi/restaurant_provider.dart';
-import 'poi/sample_restaurant_provider.dart';
+import 'poi/google_places_provider.dart';
 import 'recommend/recommend_engine.dart';
 import 'config/app_config.dart';
 import 'ui/map_screen.dart';
@@ -26,8 +26,12 @@ class OdagadaApp extends StatelessWidget {
     final MapViewBuilder mapBuilder;
 
     if (kIsWeb) {
-      // 웹(Chrome) 데모: 구글맵 + 고정 위치 + 샘플 맛집으로 흐름 확인.
-      registry = ProviderRegistry()..register(SampleRestaurantProvider());
+      // 웹(Chrome) 데모: 구글맵 + 고정 위치 + 실제 Google Places 맛집.
+      registry = ProviderRegistry()
+        ..register(GooglePlacesProvider(
+          client: http.Client(),
+          apiKey: AppConfig.googleMapsApiKey,
+        ));
       locationSource = const FixedLocationSource();
       mapBuilder = ({required onReady, required onPinTap}) =>
           GoogleMapView(onReady: onReady, onPinTap: onPinTap);

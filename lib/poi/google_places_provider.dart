@@ -1,0 +1,84 @@
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import '../core/models/lat_lng.dart';
+import '../core/models/location_event.dart';
+import '../core/models/poi.dart';
+import '../core/geo/geo_math.dart';
+import 'poi_provider.dart';
+
+class GooglePlacesException implements Exception {
+  final int statusCode;
+  final String message;
+  GooglePlacesException(this.statusCode, this.message);
+  @override
+  String toString() => 'GooglePlacesException($statusCode): $message';
+}
+
+/// Google Places API (New)의 Nearby Search로 주변 음식점을 조회하는 Provider.
+/// 브라우저(웹)에서도 CORS 없이 호출 가능. http.Client를 주입받아 테스트 가능.
+class GooglePlacesProvider implements PoiProvider {
+  final http.Client client;
+  final String apiKey;
+  GooglePlacesProvider({required this.client, required this.apiKey});
+
+  static const _endpoint =
+      'https://places.googleapis.com/v1/places:searchNearby';
+
+  @override
+  String get id => 'restaurant';
+  @override
+  String get displayName => '맛집';
+
+  @override
+  Future<List<Poi>> nearby(LocationEvent loc,
+      {required double radiusMeters}) async {
+    final res = await client.post(
+      Uri.parse(_endpoint),
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Goog-Api-Key': apiKey,
+        'X-Goog-FieldMask':
+            'places.id,places.displayName,places.location,places.primaryTypeDisplayName,places.formattedAddress',
+      },
+      body: jsonEncode({
+        'includedTypes': ['restaurant'],
+        'maxResultCount': 15,
+        'locationRestriction': {
+          'circle': {
+            'center': {
+              'latitude': loc.position.lat,
+              'longitude': loc.position.lng,
+            },
+            'radius': radiusMeters.clamp(1.0, 50000.0),
+          }
+        },
+        'languageCode': 'ko',
+        'rankPreference': 'DISTANCE',
+      }),
+    );
+    if (res.statusCode != 200) {
+      throw GooglePlacesException(res.statusCode, res.body);
+    }
+    final body = jsonDecode(utf8.decode(res.bodyBytes)) as Map<String, dynamic>;
+    final places = (body['places'] as List?) ?? const [];
+    return places
+        .map((p) => _toPoi(loc, p as Map<String, dynamic>))
+        .toList();
+  }
+
+  Poi _toPoi(LocationEvent loc, Map<String, dynamic> p) {
+    final l = p['location'] as Map<String, dynamic>;
+    final pos = LatLng(
+      (l['latitude'] as num).toDouble(),
+      (l['longitude'] as num).toDouble(),
+    );
+    return Poi(
+      id: (p['id'] as String?) ?? '${pos.lat},${pos.lng}',
+      name: (p['displayName']?['text'] as String?) ?? '이름 없음',
+      position: pos,
+      category: (p['primaryTypeDisplayName']?['text'] as String?) ?? '음식점',
+      address: p['formattedAddress'] as String?,
+      distanceMeters: GeoMath.distanceMeters(loc.position, pos),
+    );
+  }
+}
