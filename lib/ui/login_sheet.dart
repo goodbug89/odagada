@@ -44,6 +44,10 @@ Future<void> showLoginSheet(BuildContext context,
   return showModalBottomSheet<void>(
     context: context,
     showDragHandle: true,
-    builder: (_) => LoginSheet(onGoogle: onGoogle),
+    builder: (sheetContext) => LoginSheet(onGoogle: () {
+      // 로그인 시작 전에 시트를 닫아, OAuth 복귀 후 지도 위에 시트가 남지 않게.
+      Navigator.of(sheetContext).pop();
+      onGoogle();
+    }),
   );
 }
