@@ -35,6 +35,15 @@ class _SavedListScreenState extends State<SavedListScreen> {
           if (snap.connectionState != ConnectionState.done) {
             return const Center(child: CircularProgressIndicator());
           }
+          if (snap.hasError) {
+            return const Center(
+              child: Padding(
+                padding: EdgeInsets.all(24),
+                child: Text('저장 목록을 불러오지 못했어요.\n잠시 후 다시 시도해 주세요.',
+                    textAlign: TextAlign.center),
+              ),
+            );
+          }
           final items = snap.data ?? const [];
           if (items.isEmpty) {
             return const Center(child: Text('아직 저장한 곳이 없어요.'));
