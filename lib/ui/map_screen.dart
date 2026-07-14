@@ -89,13 +89,15 @@ class _MapScreenState extends State<MapScreen> {
       ),
       body: Stack(
         children: [
-          widget.mapBuilder(
-            onReady: (c) {
-              _map = c;
-              final last = _lastUpdate;
-              if (last != null) _applyToMap(last);
-            },
-            onPinTap: _onPinTap,
+          Positioned.fill(
+            child: widget.mapBuilder(
+              onReady: (c) {
+                _map = c;
+                final last = _lastUpdate;
+                if (last != null) _applyToMap(last);
+              },
+              onPinTap: _onPinTap,
+            ),
           ),
           if (_selected != null)
             Align(
