@@ -22,7 +22,10 @@ class _SavedListScreenState extends State<SavedListScreen> {
   }
 
   void _reload() {
-    setState(() => _future = widget.repo.listMine(widget.ownerId));
+    // 블록 본문 필수: 화살표는 대입식(Future)을 반환해 setState가 거부한다.
+    setState(() {
+      _future = widget.repo.listMine(widget.ownerId);
+    });
   }
 
   @override
