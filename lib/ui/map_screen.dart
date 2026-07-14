@@ -5,9 +5,11 @@ import '../core/models/poi.dart';
 import '../location/location_source.dart';
 import '../pipeline/recommendation_pipeline.dart';
 import '../poi/poi_provider.dart';
+import '../saved/saved_place_repository.dart';
 import 'account_button.dart';
 import 'map_view.dart';
 import 'info_card.dart';
+import 'login_sheet.dart';
 import 'module_selector.dart';
 import 'navigation_launcher.dart';
 
@@ -18,6 +20,7 @@ class MapScreen extends StatefulWidget {
   final ProviderRegistry registry;
   final NavigationLauncher navigationLauncher;
   final MapViewBuilder mapBuilder;
+  final SavedPlaceRepository savedRepo;
 
   const MapScreen({
     super.key,
@@ -27,6 +30,7 @@ class MapScreen extends StatefulWidget {
     required this.registry,
     required this.navigationLauncher,
     required this.mapBuilder,
+    required this.savedRepo,
   });
 
   @override
@@ -39,6 +43,7 @@ class _MapScreenState extends State<MapScreen> {
   Poi? _selected;
   String? _error;
   RecommendationUpdate? _lastUpdate;
+  Set<String> _savedIds = {};
 
   @override
   void initState() {
@@ -54,6 +59,31 @@ class _MapScreenState extends State<MapScreen> {
       return;
     }
     _sub = widget.pipeline.run(widget.locationSource.stream()).listen(_onUpdate);
+    await _reloadSaved();
+  }
+
+  Future<void> _reloadSaved() async {
+    final u = widget.auth.user;
+    if (u == null) {
+      if (mounted) setState(() => _savedIds = {});
+      return;
+    }
+    final ids = await widget.savedRepo.savedPlaceIds(u.id);
+    if (mounted) setState(() => _savedIds = ids);
+  }
+
+  Future<void> _onSaveToggle(Poi poi) async {
+    final u = widget.auth.user;
+    if (u == null) {
+      showLoginSheet(context, onGoogle: widget.auth.signInWithGoogle);
+      return;
+    }
+    if (_savedIds.contains(poi.id)) {
+      await widget.savedRepo.deleteByPlaceId(ownerId: u.id, placeId: poi.id);
+    } else {
+      await widget.savedRepo.save(ownerId: u.id, poi: poi);
+    }
+    await _reloadSaved();
   }
 
   void _onUpdate(RecommendationUpdate u) {
@@ -110,6 +140,8 @@ class _MapScreenState extends State<MapScreen> {
               child: InfoCard(
                 poi: _selected!,
                 onNavigate: () => widget.navigationLauncher.launch(_selected!),
+                isSaved: _savedIds.contains(_selected!.id),
+                onSave: () => _onSaveToggle(_selected!),
               ),
             ),
         ],

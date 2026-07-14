@@ -16,7 +16,8 @@ void main() {
     );
     await tester.pumpWidget(MaterialApp(
       home: Scaffold(
-        body: InfoCard(poi: poi, onNavigate: () => tapped = true),
+        body: InfoCard(
+            poi: poi, onNavigate: () => tapped = true, onSave: () {}),
       ),
     ));
 
@@ -27,5 +28,35 @@ void main() {
     await tester.tap(find.text('길찾기'));
     await tester.pump();
     expect(tapped, isTrue);
+  });
+
+  testWidgets('저장 버튼 탭 시 onSave 호출, isSaved면 "저장됨" 표시', (tester) async {
+    var saved = false;
+    final poi = Poi(
+      id: '1', name: '국밥집', position: LatLng(37.5, 127.0),
+      category: '음식점', distanceMeters: 100,
+    );
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(
+        body: InfoCard(
+          poi: poi, onNavigate: () {},
+          isSaved: false, onSave: () => saved = true,
+        ),
+      ),
+    ));
+    expect(find.text('저장'), findsOneWidget);
+    await tester.tap(find.text('저장'));
+    await tester.pump();
+    expect(saved, isTrue);
+
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(
+        body: InfoCard(
+          poi: poi, onNavigate: () {},
+          isSaved: true, onSave: () {},
+        ),
+      ),
+    ));
+    expect(find.text('저장됨'), findsOneWidget);
   });
 }
