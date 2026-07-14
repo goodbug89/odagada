@@ -1,15 +1,18 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import '../auth/auth_controller.dart';
 import '../core/models/poi.dart';
 import '../location/location_source.dart';
 import '../pipeline/recommendation_pipeline.dart';
 import '../poi/poi_provider.dart';
+import 'account_button.dart';
 import 'map_view.dart';
 import 'info_card.dart';
 import 'module_selector.dart';
 import 'navigation_launcher.dart';
 
 class MapScreen extends StatefulWidget {
+  final AuthController auth;
   final LocationSource locationSource;
   final RecommendationPipeline pipeline;
   final ProviderRegistry registry;
@@ -18,6 +21,7 @@ class MapScreen extends StatefulWidget {
 
   const MapScreen({
     super.key,
+    required this.auth,
     required this.locationSource,
     required this.pipeline,
     required this.registry,
@@ -79,6 +83,7 @@ class _MapScreenState extends State<MapScreen> {
       appBar: AppBar(
         title: const Text('오다가다'),
         actions: [
+          AccountButton(auth: widget.auth),
           IconButton(
             icon: const Icon(Icons.tune),
             onPressed: () => Navigator.of(context).push(MaterialPageRoute(
