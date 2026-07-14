@@ -10,24 +10,29 @@ class SavedPlaceRepository {
 
   static const _table = 'saved_places';
 
-  /// Places 연결형 저장(중복이면 무시). place_id = Poi.id.
+  /// Places 연결형 저장. 이미 저장된 곳(unique 위반)이면 멱등 처리한다.
+  /// (부분 유니크 인덱스는 upsert onConflict 타깃으로 못 쓰므로 insert + 중복 무시.)
   Future<void> save({
     required String ownerId,
     required Poi poi,
     String? memo,
   }) async {
-    await _client.from(_table).upsert(
-      savedPlaceInsert(
-        ownerId: ownerId,
-        placeId: poi.id,
-        name: poi.name,
-        lat: poi.position.lat,
-        lng: poi.position.lng,
-        category: poi.category,
-        memo: memo,
-      ),
-      onConflict: 'owner_id,place_id',
-    );
+    try {
+      await _client.from(_table).insert(
+        savedPlaceInsert(
+          ownerId: ownerId,
+          placeId: poi.id,
+          name: poi.name,
+          lat: poi.position.lat,
+          lng: poi.position.lng,
+          category: poi.category,
+          memo: memo,
+        ),
+      );
+    } on PostgrestException catch (e) {
+      if (e.code == '23505') return; // 이미 저장됨 → 멱등
+      rethrow;
+    }
   }
 
   Future<void> deleteByPlaceId({
