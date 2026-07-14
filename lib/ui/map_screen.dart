@@ -12,6 +12,7 @@ import 'info_card.dart';
 import 'login_sheet.dart';
 import 'module_selector.dart';
 import 'navigation_launcher.dart';
+import 'saved_list_screen.dart';
 
 class MapScreen extends StatefulWidget {
   final AuthController auth;
@@ -114,6 +115,21 @@ class _MapScreenState extends State<MapScreen> {
         title: const Text('오다가다'),
         actions: [
           AccountButton(auth: widget.auth),
+          IconButton(
+            icon: const Icon(Icons.bookmarks_outlined),
+            tooltip: '내 저장',
+            onPressed: () {
+              final u = widget.auth.user;
+              if (u == null) {
+                showLoginSheet(context, onGoogle: widget.auth.signInWithGoogle);
+                return;
+              }
+              Navigator.of(context).push(MaterialPageRoute(
+                builder: (_) => SavedListScreen(
+                    repo: widget.savedRepo, ownerId: u.id),
+              ));
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.tune),
             onPressed: () => Navigator.of(context).push(MaterialPageRoute(
