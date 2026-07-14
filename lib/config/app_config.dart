@@ -21,4 +21,12 @@ class AppConfig {
     }
     return key;
   }
+
+  static String get googleMapsApiKey {
+    final key = dotenv.env['GOOGLE_MAPS_API_KEY'];
+    if (key == null || key.isEmpty) {
+      throw StateError('GOOGLE_MAPS_API_KEY가 .env에 없습니다.');
+    }
+    return key;
+  }
 }

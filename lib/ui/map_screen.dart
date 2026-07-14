@@ -4,7 +4,6 @@ import '../core/models/poi.dart';
 import '../location/location_source.dart';
 import '../pipeline/recommendation_pipeline.dart';
 import '../poi/poi_provider.dart';
-import 'kakao_map_view.dart';
 import 'map_view.dart';
 import 'info_card.dart';
 import 'module_selector.dart';
@@ -15,6 +14,7 @@ class MapScreen extends StatefulWidget {
   final RecommendationPipeline pipeline;
   final ProviderRegistry registry;
   final NavigationLauncher navigationLauncher;
+  final MapViewBuilder mapBuilder;
 
   const MapScreen({
     super.key,
@@ -22,6 +22,7 @@ class MapScreen extends StatefulWidget {
     required this.pipeline,
     required this.registry,
     required this.navigationLauncher,
+    required this.mapBuilder,
   });
 
   @override
@@ -88,7 +89,7 @@ class _MapScreenState extends State<MapScreen> {
       ),
       body: Stack(
         children: [
-          KakaoMapView(
+          widget.mapBuilder(
             onReady: (c) {
               _map = c;
               final last = _lastUpdate;
