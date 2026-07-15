@@ -1,11 +1,13 @@
 import 'lat_lng.dart';
+import 'place_category.dart';
 
 /// 모든 Provider가 공통으로 반환하는 관심지점.
 class Poi {
   final String id;
   final String name;
   final LatLng position;
-  final String category;
+  final String category;      // Google primaryTypeDisplayName 원문(표시 보조)
+  final PlaceCategory bucket; // 7종 분류(색·아이콘)
   final String? address;
   final String? phone;
   final String? placeUrl;
@@ -17,6 +19,7 @@ class Poi {
     required this.name,
     required this.position,
     required this.category,
+    this.bucket = PlaceCategory.other,
     this.address,
     this.phone,
     this.placeUrl,

@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:mocktail/mocktail.dart';
 import 'package:odagada/core/models/lat_lng.dart';
 import 'package:odagada/core/models/location_event.dart';
+import 'package:odagada/core/models/place_category.dart';
 import 'package:odagada/poi/google_places_provider.dart';
 
 class MockHttpClient extends Mock implements http.Client {}
@@ -82,5 +83,30 @@ void main() {
     final provider = GooglePlacesProvider(client: mock, apiKey: 'TEST');
     expect(() => provider.nearby(loc(), radiusMeters: 500),
         throwsA(isA<GooglePlacesException>()));
+  });
+
+  test('primaryType으로 bucket을 채운다', () async {
+    final mock = MockHttpClient();
+    when(() => mock.post(any(),
+            headers: any(named: 'headers'), body: any(named: 'body')))
+        .thenAnswer((_) async => http.Response.bytes(
+              utf8.encode(jsonEncode({
+                'places': [
+                  {
+                    'id': 'p1',
+                    'displayName': {'text': '스타벅스'},
+                    'location': {'latitude': 37.5, 'longitude': 127.0},
+                    'primaryType': 'coffee_shop',
+                    'primaryTypeDisplayName': {'text': '카페'},
+                  },
+                ],
+              })),
+              200,
+            ));
+
+    final provider = GooglePlacesProvider(client: mock, apiKey: 'TEST');
+    final pois = await provider.nearby(loc(), radiusMeters: 500);
+
+    expect(pois.single.bucket, PlaceCategory.cafe);
   });
 }

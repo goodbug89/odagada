@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../core/models/lat_lng.dart';
 import '../core/models/location_event.dart';
+import '../core/models/place_category.dart';
 import '../core/models/poi.dart';
 import '../core/geo/geo_math.dart';
 import 'poi_provider.dart';
@@ -38,10 +39,15 @@ class GooglePlacesProvider implements PoiProvider {
         'Content-Type': 'application/json',
         'X-Goog-Api-Key': apiKey,
         'X-Goog-FieldMask':
-            'places.id,places.displayName,places.location,places.primaryTypeDisplayName,places.formattedAddress',
+            'places.id,places.displayName,places.location,places.primaryType,places.primaryTypeDisplayName,places.formattedAddress',
       },
       body: jsonEncode({
-        'includedTypes': ['restaurant'],
+        'includedTypes': const [
+          'restaurant', 'cafe', 'bar', 'bakery',
+          'tourist_attraction', 'park', 'museum',
+          'shopping_mall', 'department_store',
+          'movie_theater', 'amusement_park',
+        ],
         'maxResultCount': 15,
         'locationRestriction': {
           'circle': {
@@ -77,6 +83,7 @@ class GooglePlacesProvider implements PoiProvider {
       name: (p['displayName']?['text'] as String?) ?? '이름 없음',
       position: pos,
       category: (p['primaryTypeDisplayName']?['text'] as String?) ?? '음식점',
+      bucket: PlaceCategory.fromGooglePrimaryType(p['primaryType'] as String?),
       address: p['formattedAddress'] as String?,
       distanceMeters: GeoMath.distanceMeters(loc.position, pos),
     );
