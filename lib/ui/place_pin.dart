@@ -116,31 +116,35 @@ class SavedPin extends StatelessWidget {
   }
 }
 
-/// 흰 배경 이름 라벨(가독성). 지도 오버레이에서 폭 제한으로 오버플로 방지.
+/// 투명 배경 이름 라벨. 지도 위에서 묻히지 않게 흰 외곽선(헤일로)으로 가독성 확보
+/// (구글 지도 라벨 방식). 폭 제한으로 오버플로 방지.
 class _NameLabel extends StatelessWidget {
   final String text;
   final bool bold;
   const _NameLabel({required this.text, required this.bold});
 
+  // 텍스트 사방에 흰 그림자를 겹쳐 외곽선처럼 보이게 한다.
+  static const List<Shadow> _halo = [
+    Shadow(color: Colors.white, blurRadius: 2, offset: Offset(0.8, 0)),
+    Shadow(color: Colors.white, blurRadius: 2, offset: Offset(-0.8, 0)),
+    Shadow(color: Colors.white, blurRadius: 2, offset: Offset(0, 0.8)),
+    Shadow(color: Colors.white, blurRadius: 2, offset: Offset(0, -0.8)),
+    Shadow(color: Colors.white, blurRadius: 3),
+  ];
+
   @override
   Widget build(BuildContext context) {
     return ConstrainedBox(
       constraints: const BoxConstraints(maxWidth: 120),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-        decoration: BoxDecoration(
-          color: const Color(0xF2FFFFFF),
-          borderRadius: BorderRadius.circular(6),
-        ),
-        child: Text(
-          text,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: bold ? FontWeight.w800 : FontWeight.w500,
-            color: const Color(0xFF333333),
-          ),
+      child: Text(
+        text,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: TextStyle(
+          fontSize: 12,
+          fontWeight: bold ? FontWeight.w800 : FontWeight.w600,
+          color: const Color(0xFF222222),
+          shadows: _halo,
         ),
       ),
     );
