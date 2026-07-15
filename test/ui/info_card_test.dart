@@ -19,7 +19,10 @@ void main() {
     await tester.pumpWidget(MaterialApp(
       home: Scaffold(
         body: InfoCard(
-            poi: poi, onNavigate: () => tapped = true, onSave: () {}),
+            poi: poi,
+            onNavigate: () => tapped = true,
+            onSave: () {},
+            onClose: () {}),
       ),
     ));
 
@@ -43,6 +46,7 @@ void main() {
         body: InfoCard(
           poi: poi, onNavigate: () {},
           isSaved: false, onSave: () => saved = true,
+          onClose: () {},
         ),
       ),
     ));
@@ -56,6 +60,7 @@ void main() {
         body: InfoCard(
           poi: poi, onNavigate: () {},
           isSaved: true, onSave: () {},
+          onClose: () {},
         ),
       ),
     ));
@@ -69,10 +74,28 @@ void main() {
     );
     await tester.pumpWidget(MaterialApp(
       home: Scaffold(
-        body: InfoCard(poi: poi, onNavigate: () {}, onSave: () {}),
+        body: InfoCard(poi: poi, onNavigate: () {}, onSave: () {}, onClose: () {}),
       ),
     ));
     expect(find.byIcon(Icons.local_cafe), findsOneWidget);
     expect(find.textContaining('카페·디저트'), findsOneWidget);
+  });
+
+  testWidgets('주소·전화·영업중·닫기 버튼을 표시하고 onClose 콜백', (t) async {
+    var closed = false;
+    final poi = const Poi(
+      id: 'p1', name: '카페A', position: LatLng(37.5, 127.0),
+      category: '카페', bucket: PlaceCategory.cafe,
+      address: '서울시 어딘가 1', phone: '02-123-4567', openNow: true,
+      weekdayHours: ['월요일: 09:00~18:00'], distanceMeters: 50,
+    );
+    await t.pumpWidget(MaterialApp(home: Scaffold(body: InfoCard(
+      poi: poi, onNavigate: () {}, onSave: () {}, onClose: () => closed = true,
+    ))));
+    expect(find.textContaining('서울시 어딘가 1'), findsOneWidget);
+    expect(find.textContaining('02-123-4567'), findsOneWidget);
+    expect(find.textContaining('영업 중'), findsOneWidget);
+    await t.tap(find.byIcon(Icons.close));
+    expect(closed, isTrue);
   });
 }
