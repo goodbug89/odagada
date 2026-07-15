@@ -7,6 +7,7 @@ import '../core/models/recommendation.dart';
 abstract class MapController {
   void moveCamera(LatLng center);
   void setPins(List<Recommendation> recs);
+  void setSavedIds(Set<String> ids);
 }
 
 /// 핀 탭 콜백 시그니처.

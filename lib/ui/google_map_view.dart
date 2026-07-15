@@ -2,9 +2,9 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart' as gmap;
 import '../core/models/lat_lng.dart';
-import '../core/models/poi.dart';
 import '../core/models/recommendation.dart';
 import 'map_view.dart';
+import 'place_pin.dart';
 
 /// google_maps_flutter 기반 지도 위젯.
 ///
@@ -28,9 +28,15 @@ class GoogleMapView extends StatefulWidget {
 class _GoogleMapViewState extends State<GoogleMapView> implements MapController {
   gmap.GoogleMapController? _controller;
   List<Recommendation> _recs = const [];
+  Set<String> _savedIds = const {};
 
   static const _initialTarget = gmap.LatLng(37.5665, 126.9780);
   static const _initialZoom = 15.0;
+
+  // 구글 기본 POI·대중교통 라벨 숨김(우리 핀만 보이게).
+  static const _mapStyle =
+      '[{"featureType":"poi","elementType":"labels","stylers":[{"visibility":"off"}]},'
+      '{"featureType":"transit","elementType":"labels","stylers":[{"visibility":"off"}]}]';
 
   // 현재 카메라 상태(오버레이 핀 위치 계산용). onCameraMove로 갱신.
   gmap.LatLng _camTarget = _initialTarget;
@@ -47,6 +53,12 @@ class _GoogleMapViewState extends State<GoogleMapView> implements MapController 
   void setPins(List<Recommendation> recs) {
     if (!mounted) return;
     setState(() => _recs = recs);
+  }
+
+  @override
+  void setSavedIds(Set<String> ids) {
+    if (!mounted) return;
+    setState(() => _savedIds = ids);
   }
 
   /// 위도·경도를 해당 줌의 월드 픽셀 좌표로 투영(Web Mercator).
@@ -84,6 +96,7 @@ class _GoogleMapViewState extends State<GoogleMapView> implements MapController 
               ),
               myLocationButtonEnabled: false,
               zoomControlsEnabled: false,
+              style: _mapStyle,
               onCameraMove: (pos) {
                 setState(() {
                   _camTarget = pos.target;
@@ -103,67 +116,31 @@ class _GoogleMapViewState extends State<GoogleMapView> implements MapController 
   }
 
   List<Widget> _buildPins(Size size) {
-    const pinSize = 40.0;
+    const margin = 160.0; // 이름 라벨 폭까지 감안한 컬링 여유
     final pins = <Widget>[];
     for (final r in _recs) {
       final s = _screenOf(r.poi.position, size);
-      // 화면 밖 핀은 그리지 않음(여유 마진 포함).
-      if (s.dx < -pinSize ||
-          s.dy < -pinSize ||
-          s.dx > size.width + pinSize ||
-          s.dy > size.height + pinSize) {
+      if (s.dx < -margin ||
+          s.dy < -margin ||
+          s.dx > size.width + margin ||
+          s.dy > size.height + margin) {
         continue;
       }
-      pins.add(Positioned(
-        left: s.dx - pinSize / 2,
-        top: s.dy - (pinSize + 6), // 핀 꼬리 끝점(=원+꼬리 높이)이 좌표에 오도록
-        child: _Pin(
-          poi: r.poi,
-          size: pinSize,
-          onTap: () => widget.onPinTap(r.poi),
-        ),
-      ));
+      final saved = _savedIds.contains(r.poi.id);
+      if (saved) {
+        pins.add(Positioned(
+          left: s.dx - 22, // 머리 폭 44의 절반
+          top: s.dy - 46,  // 꼬리 끝이 기준점
+          child: SavedPin(poi: r.poi, onTap: () => widget.onPinTap(r.poi)),
+        ));
+      } else {
+        pins.add(Positioned(
+          left: s.dx - 15, // 원 지름 30의 절반(원 중심 = 기준점)
+          top: s.dy - 15,
+          child: CategoryDot(poi: r.poi, onTap: () => widget.onPinTap(r.poi)),
+        ));
+      }
     }
     return pins;
-  }
-}
-
-/// 브랜드 주황 핀. 탭하면 콜백.
-class _Pin extends StatelessWidget {
-  final Poi poi;
-  final double size;
-  final VoidCallback onTap;
-  const _Pin({required this.poi, required this.size, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: size,
-            height: size,
-            decoration: BoxDecoration(
-              color: const Color(0xFFFF5E13),
-              shape: BoxShape.circle,
-              border: Border.all(color: Colors.white, width: 3),
-              boxShadow: const [
-                BoxShadow(
-                    color: Color(0x55000000), blurRadius: 6, offset: Offset(0, 3)),
-              ],
-            ),
-            child: const Icon(Icons.restaurant, color: Colors.white, size: 20),
-          ),
-          // 핀 꼬리(작은 삼각형 대용)
-          Container(
-            width: 3,
-            height: 6,
-            color: const Color(0xFFFF5E13),
-          ),
-        ],
-      ),
-    );
   }
 }
