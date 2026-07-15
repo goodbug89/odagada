@@ -42,5 +42,5 @@ Future<String?> showMemoSheet(BuildContext context,
         ),
       );
     },
-  );
+  ).whenComplete(controller.dispose); // 시트 닫히면 컨트롤러 해제(누수 방지)
 }

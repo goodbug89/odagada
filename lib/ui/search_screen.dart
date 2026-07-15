@@ -31,12 +31,19 @@ class _SearchScreenState extends State<SearchScreen> {
   List<Poi> _results = const [];
   Set<String> _savedIds = {};
   bool _loading = false;
+  bool _searched = false;
   String? _error;
 
   @override
   void initState() {
     super.initState();
     _loadSaved();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
   }
 
   Future<void> _loadSaved() async {
@@ -55,7 +62,12 @@ class _SearchScreenState extends State<SearchScreen> {
     });
     try {
       final r = await widget.textSearch(q, widget.bias);
-      if (mounted) setState(() => _results = r);
+      if (mounted) {
+        setState(() {
+          _results = r;
+          _searched = true;
+        });
+      }
     } catch (_) {
       if (mounted) setState(() => _error = '검색에 실패했어요. 잠시 후 다시 시도해 주세요.');
     } finally {
@@ -100,6 +112,9 @@ class _SearchScreenState extends State<SearchScreen> {
               padding: const EdgeInsets.all(24), child: Text(_error!)))
           : _loading
               ? const Center(child: CircularProgressIndicator())
+              : _results.isEmpty
+              ? Center(
+                  child: Text(_searched ? '검색 결과가 없어요.' : '장소 이름을 검색해 보세요.'))
               : ListView.separated(
                   itemCount: _results.length,
                   separatorBuilder: (_, _) => const Divider(height: 1),
