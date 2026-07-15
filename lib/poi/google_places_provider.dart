@@ -39,7 +39,7 @@ class GooglePlacesProvider implements PoiProvider {
         'Content-Type': 'application/json',
         'X-Goog-Api-Key': apiKey,
         'X-Goog-FieldMask':
-            'places.id,places.displayName,places.location,places.primaryType,places.primaryTypeDisplayName,places.formattedAddress',
+            'places.id,places.displayName,places.location,places.primaryType,places.primaryTypeDisplayName,places.formattedAddress,places.nationalPhoneNumber,places.regularOpeningHours',
       },
       body: jsonEncode({
         'includedTypes': const [
@@ -85,6 +85,12 @@ class GooglePlacesProvider implements PoiProvider {
       category: (p['primaryTypeDisplayName']?['text'] as String?) ?? '음식점',
       bucket: PlaceCategory.fromGooglePrimaryType(p['primaryType'] as String?),
       address: p['formattedAddress'] as String?,
+      phone: p['nationalPhoneNumber'] as String?,
+      openNow: (p['regularOpeningHours'] as Map<String, dynamic>?)?['openNow']
+          as bool?,
+      weekdayHours: ((p['regularOpeningHours'] as Map<String, dynamic>?)?
+              ['weekdayDescriptions'] as List?)
+          ?.cast<String>(),
       distanceMeters: GeoMath.distanceMeters(loc.position, pos),
     );
   }

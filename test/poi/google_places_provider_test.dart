@@ -109,4 +109,38 @@ void main() {
 
     expect(pois.single.bucket, PlaceCategory.cafe);
   });
+
+  test('전화·영업시간을 파싱한다', () async {
+    final mock = MockHttpClient();
+    when(() => mock.post(any(),
+            headers: any(named: 'headers'), body: any(named: 'body')))
+        .thenAnswer((_) async => http.Response.bytes(
+              utf8.encode(jsonEncode({
+                'places': [
+                  {
+                    'id': 'p1',
+                    'displayName': {'text': '카페A'},
+                    'location': {'latitude': 37.5, 'longitude': 127.0},
+                    'primaryType': 'cafe',
+                    'nationalPhoneNumber': '02-123-4567',
+                    'regularOpeningHours': {
+                      'openNow': true,
+                      'weekdayDescriptions': [
+                        '월요일: 09:00~18:00',
+                        '화요일: 09:00~18:00',
+                      ],
+                    },
+                  },
+                ],
+              })),
+              200,
+            ));
+
+    final provider = GooglePlacesProvider(client: mock, apiKey: 'TEST');
+    final pois = await provider.nearby(loc(), radiusMeters: 500);
+
+    expect(pois.single.phone, '02-123-4567');
+    expect(pois.single.openNow, true);
+    expect(pois.single.weekdayHours, hasLength(2));
+  });
 }

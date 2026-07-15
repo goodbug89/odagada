@@ -11,6 +11,8 @@ class Poi {
   final String? address;
   final String? phone;
   final String? placeUrl;
+  final bool? openNow;              // 영업중 여부(모르면 null)
+  final List<String>? weekdayHours; // 요일별 영업시간 설명(없으면 null)
   final double distanceMeters; // 조회 기준점으로부터 거리
   final double rating;         // 평점 없으면 0
 
@@ -23,6 +25,8 @@ class Poi {
     this.address,
     this.phone,
     this.placeUrl,
+    this.openNow,
+    this.weekdayHours,
     required this.distanceMeters,
     this.rating = 0,
   });
