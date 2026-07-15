@@ -73,6 +73,7 @@ class _GoogleMapViewState extends State<GoogleMapView> implements MapController 
     final region = await c.getVisibleRegion();
     final ne = region.northeast;
     final sw = region.southwest;
+    if (ne.latitude == sw.latitude && ne.longitude == sw.longitude) return; // 레이아웃 전 퇴화 영역 방어
     final center = LatLng((ne.latitude + sw.latitude) / 2,
         (ne.longitude + sw.longitude) / 2);
     final radius = GeoMath.distanceMeters(
@@ -130,8 +131,11 @@ class _GoogleMapViewState extends State<GoogleMapView> implements MapController 
               zoomControlsEnabled: false,
               style: _mapStyle,
               onCameraMoveStarted: () {
-                // 우리 이동이 아니면 사용자가 손댄 것 → 따라가기 해제
-                if (!_programmaticMove) _following = false;
+                if (_programmaticMove) {
+                  _programmaticMove = false; // 우리 이동으로 소비
+                } else {
+                  _following = false; // 사용자가 손댐 → 따라가기 해제
+                }
               },
               onCameraMove: (pos) {
                 setState(() {
@@ -143,6 +147,7 @@ class _GoogleMapViewState extends State<GoogleMapView> implements MapController 
               onMapCreated: (c) {
                 _controller = c;
                 widget.onReady(this);
+                _handleCameraIdle(); // 최초 뷰포트로 즉시 1회 검색(카메라 이동 없어도)
               },
             ),
             ..._buildPins(size),

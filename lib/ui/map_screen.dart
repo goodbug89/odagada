@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../auth/auth_controller.dart';
+import '../core/geo/geo_math.dart';
 import '../core/models/lat_lng.dart';
 import '../core/models/poi.dart';
 import '../core/models/recommendation.dart';
@@ -48,6 +49,8 @@ class _MapScreenState extends State<MapScreen> {
 
   Timer? _idleDebounce;
   LatLng? _lastSearchCenter;
+  double? _lastSearchRadius;
+  int _searchGen = 0;
 
   @override
   void initState() {
@@ -86,20 +89,22 @@ class _MapScreenState extends State<MapScreen> {
     _idleDebounce?.cancel();
     _idleDebounce = Timer(const Duration(milliseconds: 400), () {
       final last = _lastSearchCenter;
-      if (last != null) {
-        // GeoMath 없이 대략 이동 판단: 위경도 → m 근사(위도 111km/deg)
-        final dLat = (center.lat - last.lat).abs() * 111000;
-        final dLng = (center.lng - last.lng).abs() * 88000; // ~cos(37.5)*111km
-        if (dLat < 30 && dLng < 30) return; // 거의 안 움직임 → 스킵
+      final lastR = _lastSearchRadius;
+      if (last != null && lastR != null) {
+        final moved = GeoMath.distanceMeters(last, center);
+        final radiusChange = (radiusMeters - lastR).abs() / lastR;
+        if (moved < 30 && radiusChange < 0.2) return; // 거의 안 움직이고 줌도 그대로 → 스킵
       }
       _lastSearchCenter = center;
+      _lastSearchRadius = radiusMeters;
       _runSearch(center, radiusMeters);
     });
   }
 
   Future<void> _runSearch(LatLng center, double radiusMeters) async {
+    final gen = ++_searchGen;
     final pois = await _searcher.search(center, radiusMeters);
-    if (!mounted) return;
+    if (!mounted || gen != _searchGen) return; // 더 최신 검색이 시작됐으면 이 결과는 버림
     final recs = pois.map((p) => Recommendation(poi: p, score: 0)).toList();
     _map?.setPins(recs);
     _map?.setSavedIds(_savedIds);

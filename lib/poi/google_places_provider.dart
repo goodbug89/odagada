@@ -48,7 +48,7 @@ class GooglePlacesProvider implements PoiProvider {
           'shopping_mall', 'department_store',
           'movie_theater', 'amusement_park',
         ],
-        'maxResultCount': 15,
+        'maxResultCount': 20,
         'locationRestriction': {
           'circle': {
             'center': {
