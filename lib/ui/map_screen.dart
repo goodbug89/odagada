@@ -19,6 +19,7 @@ import 'memo_sheet.dart';
 import 'module_selector.dart';
 import 'navigation_launcher.dart';
 import 'saved_list_screen.dart';
+import 'search_screen.dart';
 
 class MapScreen extends StatefulWidget {
   final AuthController auth;
@@ -27,6 +28,7 @@ class MapScreen extends StatefulWidget {
   final NavigationLauncher navigationLauncher;
   final MapViewBuilder mapBuilder;
   final SavedPlaceRepository savedRepo;
+  final Future<List<Poi>> Function(String query, LatLng? bias) textSearch;
 
   const MapScreen({
     super.key,
@@ -36,6 +38,7 @@ class MapScreen extends StatefulWidget {
     required this.navigationLauncher,
     required this.mapBuilder,
     required this.savedRepo,
+    required this.textSearch,
   });
 
   @override
@@ -174,6 +177,19 @@ class _MapScreenState extends State<MapScreen> {
         title: const Text('오다가다'),
         actions: [
           AccountButton(auth: widget.auth),
+          IconButton(
+            icon: const Icon(Icons.search),
+            tooltip: '검색',
+            onPressed: () => Navigator.of(context).push(MaterialPageRoute(
+              builder: (_) => SearchScreen(
+                textSearch: widget.textSearch,
+                bias: _lastCenter,
+                savedRepo: widget.savedRepo,
+                auth: widget.auth,
+                onChanged: _reloadSaved,
+              ),
+            )),
+          ),
           IconButton(
             icon: const Icon(Icons.bookmarks_outlined),
             tooltip: '내 저장',

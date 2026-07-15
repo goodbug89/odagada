@@ -30,11 +30,11 @@ class _OdagadaAppState extends State<OdagadaApp> {
 
   @override
   Widget build(BuildContext context) {
-    final registry = ProviderRegistry()
-      ..register(GooglePlacesProvider(
-        client: http.Client(),
-        apiKey: AppConfig.googleMapsApiKey,
-      ));
+    final placesProvider = GooglePlacesProvider(
+      client: http.Client(),
+      apiKey: AppConfig.googleMapsApiKey,
+    );
+    final registry = ProviderRegistry()..register(placesProvider);
 
     final LocationSource locationSource =
         kIsWeb ? const FixedLocationSource() : GeolocatorLocationSource();
@@ -64,6 +64,8 @@ class _OdagadaAppState extends State<OdagadaApp> {
         navigationLauncher: NavigationLauncher(),
         mapBuilder: mapBuilder,
         savedRepo: SavedPlaceRepository(),
+        textSearch: (query, bias) =>
+            placesProvider.searchText(query, bias: bias),
       ),
     );
   }
