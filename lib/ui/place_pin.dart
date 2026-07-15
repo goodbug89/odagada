@@ -94,7 +94,20 @@ class SavedPin extends StatelessWidget {
           ),
           Container(width: 3, height: 6, color: c.color), // 꼬리(끝=상단 46px)
           const SizedBox(height: 2),
-          _NameLabel(text: poi.name, bold: true),
+          // 이름 라벨이 머리(44px)보다 넓어도 Column 폭을 넓히지 않게 고정 슬롯 안에서
+          // 중앙 정렬로 넘치게 한다 → 머리 중심이 기준점(s.dx)에서 밀리지 않음.
+          SizedBox(
+            width: 44,
+            child: LimitedBox(
+              maxHeight: 30,
+              child: OverflowBox(
+                minWidth: 0,
+                maxWidth: 120,
+                alignment: Alignment.topCenter,
+                child: _NameLabel(text: poi.name, bold: true),
+              ),
+            ),
+          ),
         ],
       ),
     );
