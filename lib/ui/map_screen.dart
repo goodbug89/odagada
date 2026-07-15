@@ -15,6 +15,7 @@ import 'account_button.dart';
 import 'map_view.dart';
 import 'info_card.dart';
 import 'login_sheet.dart';
+import 'memo_sheet.dart';
 import 'module_selector.dart';
 import 'navigation_launcher.dart';
 import 'saved_list_screen.dart';
@@ -146,7 +147,10 @@ class _MapScreenState extends State<MapScreen> {
     if (_savedIds.contains(poi.id)) {
       await widget.savedRepo.deleteByPlaceId(ownerId: u.id, placeId: poi.id);
     } else {
-      await widget.savedRepo.save(ownerId: u.id, poi: poi);
+      final memo = await showMemoSheet(context, placeName: poi.name);
+      if (memo == null) return; // 시트 닫음 → 저장 취소
+      await widget.savedRepo.save(
+          ownerId: u.id, poi: poi, memo: memo.isEmpty ? null : memo);
     }
     await _reloadSaved();
   }
