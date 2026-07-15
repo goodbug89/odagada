@@ -1,3 +1,5 @@
+import '../core/models/place_category.dart';
+
 /// 저장된 장소(내 저장). Supabase saved_places 행과 1:1.
 class SavedPlace {
   final String id;
@@ -17,6 +19,8 @@ class SavedPlace {
     this.category,
     this.memo,
   });
+
+  PlaceCategory get bucket => PlaceCategory.fromId(category);
 }
 
 double _toDouble(Object? v) => (v as num).toDouble();

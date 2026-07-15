@@ -25,7 +25,7 @@ class SavedPlaceRepository {
           name: poi.name,
           lat: poi.position.lat,
           lng: poi.position.lng,
-          category: poi.category,
+          category: poi.bucket.name,
           memo: memo,
         ),
       );

@@ -16,6 +16,10 @@ enum PlaceCategory {
   final IconData icon;
   const PlaceCategory(this.label, this.color, this.icon);
 
+  /// enum id(name)로 역매핑. 미지/누락은 기타.
+  static PlaceCategory fromId(String? id) =>
+      values.firstWhere((e) => e.name == id, orElse: () => PlaceCategory.other);
+
   /// Google Places(New) primaryType 코드를 7종으로 매핑. 미지/누락은 기타.
   /// 구체 종류(카페/술집/명소/쇼핑/액티비티)를 먼저 판정하고,
   /// 광범위한 restaurant(및 `*_restaurant`)는 마지막에 판정한다.

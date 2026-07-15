@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:odagada/core/models/place_category.dart';
 import 'package:odagada/saved/saved_place.dart';
 
 void main() {
@@ -43,5 +44,27 @@ void main() {
     expect(m['lng'], 2.0);
     expect(m['category'], '카페');
     expect(m.containsKey('memo'), isTrue);
+  });
+
+  test('category에 저장된 버킷 id를 PlaceCategory로 읽는다', () {
+    final row = savedPlaceFromRow({
+      'id': 's1', 'place_id': 'p1', 'name': 'x',
+      'lat': 37.5, 'lng': 127.0, 'category': 'cafe', 'memo': null,
+    });
+    expect(row.bucket, PlaceCategory.cafe);
+  });
+
+  test('알 수 없는 category는 기타로 폴백', () {
+    final row = savedPlaceFromRow({
+      'id': 's2', 'place_id': 'p2', 'name': 'y',
+      'lat': 37.5, 'lng': 127.0, 'category': '음식점', 'memo': null,
+    });
+    expect(row.bucket, PlaceCategory.other);
+  });
+
+  test('PlaceCategory.fromId', () {
+    expect(PlaceCategory.fromId('bar'), PlaceCategory.bar);
+    expect(PlaceCategory.fromId(null), PlaceCategory.other);
+    expect(PlaceCategory.fromId('nope'), PlaceCategory.other);
   });
 }
