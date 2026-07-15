@@ -43,11 +43,15 @@ class _OdagadaAppState extends State<OdagadaApp> {
       required void Function(MapController) onReady,
       required PinTapCallback onPinTap,
       required void Function(LatLng center, double radiusMeters) onCameraIdle,
+      required VoidCallback onMapTap,
+      required void Function(bool following) onFollowChanged,
     }) =>
         GoogleMapView(
           onReady: onReady,
           onPinTap: onPinTap,
           onCameraIdle: onCameraIdle,
+          onMapTap: onMapTap,
+          onFollowChanged: onFollowChanged,
         );
 
     return MaterialApp(

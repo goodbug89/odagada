@@ -63,6 +63,8 @@ class _KakaoMapViewState extends State<KakaoMapView> implements MapController {
   void setCar(LatLng car) {} // 레거시(구글로 전환됨) — 미사용
   @override
   void recenter() {} // 레거시 — 미사용
+  @override
+  void stopFollowing() {} // 레거시 — 미사용
 
   @override
   void setPins(List<Recommendation> recs) {

@@ -17,11 +17,15 @@ class GoogleMapView extends StatefulWidget {
   final void Function(MapController controller) onReady;
   final PinTapCallback onPinTap;
   final void Function(LatLng center, double radiusMeters) onCameraIdle;
+  final VoidCallback onMapTap;
+  final void Function(bool following) onFollowChanged;
   const GoogleMapView({
     super.key,
     required this.onReady,
     required this.onPinTap,
     required this.onCameraIdle,
+    required this.onMapTap,
+    required this.onFollowChanged,
   });
 
   @override
@@ -57,8 +61,17 @@ class _GoogleMapViewState extends State<GoogleMapView> implements MapController 
 
   @override
   void recenter() {
-    _following = true;
+    _setFollowing(true);
     if (_car != null) _animateTo(_car!);
+  }
+
+  @override
+  void stopFollowing() => _setFollowing(false);
+
+  void _setFollowing(bool v) {
+    if (_following == v) return;
+    _following = v;
+    widget.onFollowChanged(v);
   }
 
   void _animateTo(gmap.LatLng pos) {
@@ -130,11 +143,12 @@ class _GoogleMapViewState extends State<GoogleMapView> implements MapController 
               myLocationButtonEnabled: false,
               zoomControlsEnabled: false,
               style: _mapStyle,
+              onTap: (_) => widget.onMapTap(),
               onCameraMoveStarted: () {
                 if (_programmaticMove) {
                   _programmaticMove = false; // 우리 이동으로 소비
                 } else {
-                  _following = false; // 사용자가 손댐 → 따라가기 해제
+                  _setFollowing(false); // 사용자가 손댐 → 따라가기 해제
                 }
               },
               onCameraMove: (pos) {

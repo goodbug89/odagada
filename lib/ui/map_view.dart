@@ -11,6 +11,9 @@ abstract class MapController {
   /// 따라가기를 재개하고 차 위치로 카메라 복귀('내 위치' 버튼).
   void recenter();
 
+  /// 따라가기 해제(카메라 그대로).
+  void stopFollowing();
+
   void setPins(List<Recommendation> recs);
   void setSavedIds(Set<String> ids);
 }
@@ -23,4 +26,6 @@ typedef MapViewBuilder = Widget Function({
   required void Function(MapController) onReady,
   required PinTapCallback onPinTap,
   required void Function(LatLng center, double radiusMeters) onCameraIdle,
+  required VoidCallback onMapTap,
+  required void Function(bool following) onFollowChanged,
 });

@@ -45,6 +45,7 @@ class _MapScreenState extends State<MapScreen> {
   Poi? _selected;
   String? _error;
   Set<String> _savedIds = {};
+  bool _following = true;
   late final ViewportSearcher _searcher = ViewportSearcher(widget.registry);
 
   Timer? _idleDebounce;
@@ -167,9 +168,19 @@ class _MapScreenState extends State<MapScreen> {
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        tooltip: '내 위치',
-        onPressed: () => _map?.recenter(),
-        child: const Icon(Icons.my_location),
+        tooltip: _following ? '탐색 모드로' : '내 위치(추적)',
+        backgroundColor: _following
+            ? Theme.of(context).colorScheme.primary
+            : null,
+        foregroundColor: _following ? Colors.white : null,
+        onPressed: () {
+          if (_following) {
+            _map?.stopFollowing();
+          } else {
+            _map?.recenter();
+          }
+        },
+        child: Icon(_following ? Icons.gps_fixed : Icons.my_location),
       ),
       body: Stack(
         children: [
@@ -181,6 +192,12 @@ class _MapScreenState extends State<MapScreen> {
               },
               onPinTap: _onPinTap,
               onCameraIdle: _onCameraIdle,
+              onMapTap: () {
+                if (_selected != null) setState(() => _selected = null);
+              },
+              onFollowChanged: (f) {
+                if (mounted) setState(() => _following = f);
+              },
             ),
           ),
           if (_selected != null)
@@ -191,6 +208,7 @@ class _MapScreenState extends State<MapScreen> {
                 onNavigate: () => widget.navigationLauncher.launch(_selected!),
                 isSaved: _savedIds.contains(_selected!.id),
                 onSave: () => _onSaveToggle(_selected!),
+                onClose: () => setState(() => _selected = null),
               ),
             ),
         ],
