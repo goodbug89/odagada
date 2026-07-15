@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:odagada/core/models/lat_lng.dart';
+import 'package:odagada/core/models/place_category.dart';
 import 'package:odagada/core/models/poi.dart';
 import 'package:odagada/ui/info_card.dart';
 
@@ -12,6 +13,7 @@ void main() {
       name: '맛있는 국밥',
       position: LatLng(37.5, 127.0),
       category: '음식점 > 한식 > 국밥',
+      bucket: PlaceCategory.restaurant,
       distanceMeters: 320,
     );
     await tester.pumpWidget(MaterialApp(
@@ -23,7 +25,7 @@ void main() {
 
     expect(find.text('맛있는 국밥'), findsOneWidget);
     expect(find.textContaining('320'), findsOneWidget); // 거리 표기
-    expect(find.textContaining('한식'), findsOneWidget);
+    expect(find.textContaining('맛집'), findsOneWidget); // 카테고리 라벨(버킷)
 
     await tester.tap(find.text('길찾기'));
     await tester.pump();
@@ -58,5 +60,19 @@ void main() {
       ),
     ));
     expect(find.text('저장됨'), findsOneWidget);
+  });
+
+  testWidgets('카테고리 아이콘과 라벨을 보여준다', (tester) async {
+    final poi = Poi(
+      id: '1', name: '스타벅스', position: LatLng(37.5, 127.0),
+      category: '카페', bucket: PlaceCategory.cafe, distanceMeters: 120,
+    );
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(
+        body: InfoCard(poi: poi, onNavigate: () {}, onSave: () {}),
+      ),
+    ));
+    expect(find.byIcon(Icons.local_cafe), findsOneWidget);
+    expect(find.textContaining('카페·디저트'), findsOneWidget);
   });
 }

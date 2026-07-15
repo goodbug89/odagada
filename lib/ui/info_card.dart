@@ -35,8 +35,14 @@ class InfoCard extends StatelessWidget {
                 style: const TextStyle(
                     fontSize: 24, fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
-            Text('$_distanceText · ${poi.category}',
-                style: const TextStyle(fontSize: 18, color: Colors.black54)),
+            Row(
+              children: [
+                Icon(poi.bucket.icon, size: 18, color: poi.bucket.color),
+                const SizedBox(width: 6),
+                Text('$_distanceText · ${poi.bucket.label}',
+                    style: const TextStyle(fontSize: 18, color: Colors.black54)),
+              ],
+            ),
             const SizedBox(height: 16),
             Row(
               children: [

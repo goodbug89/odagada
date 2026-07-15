@@ -67,10 +67,12 @@ class _MapScreenState extends State<MapScreen> {
     final u = widget.auth.user;
     if (u == null) {
       if (mounted) setState(() => _savedIds = {});
+      _map?.setSavedIds(const {});
       return;
     }
     final ids = await widget.savedRepo.savedPlaceIds(u.id);
     if (mounted) setState(() => _savedIds = ids);
+    _map?.setSavedIds(ids);
   }
 
   Future<void> _onSaveToggle(Poi poi) async {
@@ -146,6 +148,7 @@ class _MapScreenState extends State<MapScreen> {
                 _map = c;
                 final last = _lastUpdate;
                 if (last != null) _applyToMap(last);
+                _map?.setSavedIds(_savedIds);
               },
               onPinTap: _onPinTap,
             ),
