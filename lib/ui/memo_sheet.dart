@@ -42,5 +42,7 @@ Future<String?> showMemoSheet(BuildContext context,
         ),
       );
     },
-  ).whenComplete(controller.dispose); // 시트 닫히면 컨트롤러 해제(누수 방지)
+  );
+  // NOTE: controller는 시트 퇴장 애니메이션 중에도 TextField가 참조하므로 여기서
+  // dispose하지 않는다(일회성 함수-로컬이라 GC됨). whenComplete 즉시 해제는 X.
 }
