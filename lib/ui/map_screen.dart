@@ -8,7 +8,9 @@ import '../core/models/recommendation.dart';
 import '../location/location_source.dart';
 import '../poi/poi_provider.dart';
 import '../poi/viewport_searcher.dart';
+import '../saved/saved_place.dart';
 import '../saved/saved_place_repository.dart';
+import '../saved/saved_overlay.dart';
 import 'account_button.dart';
 import 'map_view.dart';
 import 'info_card.dart';
@@ -45,12 +47,15 @@ class _MapScreenState extends State<MapScreen> {
   Poi? _selected;
   String? _error;
   Set<String> _savedIds = {};
+  List<SavedPlace> _savedPlaces = const [];
   bool _following = true;
   late final ViewportSearcher _searcher = ViewportSearcher(widget.registry);
 
   Timer? _idleDebounce;
   LatLng? _lastSearchCenter;
   double? _lastSearchRadius;
+  LatLng? _lastCenter;
+  double? _lastRadius;
   int _searchGen = 0;
 
   @override
@@ -76,13 +81,27 @@ class _MapScreenState extends State<MapScreen> {
   Future<void> _reloadSaved() async {
     final u = widget.auth.user;
     if (u == null) {
-      if (mounted) setState(() => _savedIds = {});
+      if (mounted) {
+        setState(() {
+          _savedIds = {};
+          _savedPlaces = const [];
+        });
+      }
       _map?.setSavedIds(const {});
       return;
     }
-    final ids = await widget.savedRepo.savedPlaceIds(u.id);
-    if (mounted) setState(() => _savedIds = ids);
+    final places = await widget.savedRepo.listMine(u.id);
+    final ids = places.map((p) => p.placeId).whereType<String>().toSet();
+    if (mounted) {
+      setState(() {
+        _savedPlaces = places;
+        _savedIds = ids;
+      });
+    }
     _map?.setSavedIds(ids);
+    // 저장이 바뀌면 현재 화면에 즉시 반영(마지막 검색 좌표로 재병합)
+    final c = _lastCenter, r = _lastRadius;
+    if (c != null && r != null) _runSearch(c, r);
   }
 
   // 카메라 정지 → 디바운스 → 중심 30m 이상 이동했을 때만 뷰포트 검색.
@@ -103,10 +122,17 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   Future<void> _runSearch(LatLng center, double radiusMeters) async {
+    _lastCenter = center;
+    _lastRadius = radiusMeters;
     final gen = ++_searchGen;
     final pois = await _searcher.search(center, radiusMeters);
     if (!mounted || gen != _searchGen) return; // 더 최신 검색이 시작됐으면 이 결과는 버림
-    final recs = pois.map((p) => Recommendation(poi: p, score: 0)).toList();
+    final ids = pois.map((p) => p.id).toSet();
+    final overlay = savedPoisInViewport(_savedPlaces, center, radiusMeters)
+        .where((p) => !ids.contains(p.id)); // 검색결과에 이미 있으면 중복 제거
+    final recs = [...pois, ...overlay]
+        .map((p) => Recommendation(poi: p, score: 0))
+        .toList();
     _map?.setPins(recs);
     _map?.setSavedIds(_savedIds);
   }
