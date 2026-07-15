@@ -57,10 +57,10 @@ class _SavedListScreenState extends State<SavedListScreen> {
             itemBuilder: (context, i) {
               final p = items[i];
               return ListTile(
-                leading: const Icon(Icons.bookmark, color: Color(0xFFFF5E13)),
+                leading: Icon(p.bucket.icon, color: p.bucket.color),
                 title: Text(p.name),
                 subtitle: Text([
-                  if (p.category != null) p.category!,
+                  p.bucket.label,
                   if (p.memo != null && p.memo!.isNotEmpty) p.memo!,
                 ].join(' · ')),
                 trailing: IconButton(
