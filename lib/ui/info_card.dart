@@ -25,8 +25,11 @@ class InfoCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // 시스템 내비게이션 바(제스처/버튼) 높이만큼 카드를 위로 띄워 겹침 방지.
+    final bottomInset = MediaQuery.of(context).viewPadding.bottom;
     return Card(
-      margin: const EdgeInsets.all(12),
+      margin: EdgeInsets.only(
+          left: 12, right: 12, top: 12, bottom: 12 + bottomInset),
       child: ConstrainedBox(
         constraints: BoxConstraints(
             maxHeight: MediaQuery.of(context).size.height * 0.45),
