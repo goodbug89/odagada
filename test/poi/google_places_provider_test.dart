@@ -143,4 +143,33 @@ void main() {
     expect(pois.single.openNow, true);
     expect(pois.single.weekdayHours, hasLength(2));
   });
+
+  test('searchText는 textQuery로 검색해 Poi 목록을 준다', () async {
+    final mock = MockHttpClient();
+    when(() => mock.post(any(),
+        headers: any(named: 'headers'), body: any(named: 'body'))).thenAnswer(
+      (invocation) async {
+        final body = invocation.namedArguments[const Symbol('body')] as String;
+        expect(body, contains('금양화로')); // textQuery 실림
+        return http.Response.bytes(
+          utf8.encode(jsonEncode({
+            'places': [
+              {
+                'id': 'p1',
+                'displayName': {'text': '금양화로'},
+                'location': {'latitude': 37.5, 'longitude': 127.0},
+                'primaryType': 'korean_restaurant',
+              }
+            ],
+          })),
+          200,
+        );
+      },
+    );
+    final provider = GooglePlacesProvider(client: mock, apiKey: 'k');
+    final pois = await provider.searchText('금양화로',
+        bias: const LatLng(37.5, 127.0));
+    expect(pois.single.name, '금양화로');
+    expect(pois.single.bucket, PlaceCategory.restaurant);
+  });
 }

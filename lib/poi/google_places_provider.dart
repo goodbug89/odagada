@@ -68,11 +68,44 @@ class GooglePlacesProvider implements PoiProvider {
     final body = jsonDecode(utf8.decode(res.bodyBytes)) as Map<String, dynamic>;
     final places = (body['places'] as List?) ?? const [];
     return places
-        .map((p) => _toPoi(loc, p as Map<String, dynamic>))
+        .map((p) => _toPoi(loc.position, p as Map<String, dynamic>))
         .toList();
   }
 
-  Poi _toPoi(LocationEvent loc, Map<String, dynamic> p) {
+  static const _textEndpoint =
+      'https://places.googleapis.com/v1/places:searchText';
+
+  Future<List<Poi>> searchText(String query, {LatLng? bias}) async {
+    final res = await client.post(
+      Uri.parse(_textEndpoint),
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Goog-Api-Key': apiKey,
+        'X-Goog-FieldMask':
+            'places.id,places.displayName,places.location,places.primaryType,places.primaryTypeDisplayName,places.formattedAddress,places.nationalPhoneNumber,places.regularOpeningHours',
+      },
+      body: jsonEncode({
+        'textQuery': query,
+        if (bias != null)
+          'locationBias': {
+            'circle': {
+              'center': {'latitude': bias.lat, 'longitude': bias.lng},
+              'radius': 20000.0,
+            }
+          },
+        'maxResultCount': 15,
+        'languageCode': 'ko',
+      }),
+    );
+    if (res.statusCode != 200) {
+      throw GooglePlacesException(res.statusCode, res.body);
+    }
+    final body = jsonDecode(utf8.decode(res.bodyBytes)) as Map<String, dynamic>;
+    final places = (body['places'] as List?) ?? const [];
+    return places.map((p) => _toPoi(bias, p as Map<String, dynamic>)).toList();
+  }
+
+  Poi _toPoi(LatLng? ref, Map<String, dynamic> p) {
     final l = p['location'] as Map<String, dynamic>;
     final pos = LatLng(
       (l['latitude'] as num).toDouble(),
@@ -91,7 +124,7 @@ class GooglePlacesProvider implements PoiProvider {
       weekdayHours: ((p['regularOpeningHours'] as Map<String, dynamic>?)?
               ['weekdayDescriptions'] as List?)
           ?.cast<String>(),
-      distanceMeters: GeoMath.distanceMeters(loc.position, pos),
+      distanceMeters: ref == null ? 0 : GeoMath.distanceMeters(ref, pos),
     );
   }
 }
