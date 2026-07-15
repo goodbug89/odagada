@@ -2,12 +2,10 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'auth/auth_controller.dart';
+import 'core/models/lat_lng.dart';
 import 'location/location_source.dart';
-import 'location/location_engine.dart';
-import 'pipeline/recommendation_pipeline.dart';
 import 'poi/poi_provider.dart';
 import 'poi/google_places_provider.dart';
-import 'recommend/recommend_engine.dart';
 import 'config/app_config.dart';
 import 'saved/saved_place_repository.dart';
 import 'ui/map_screen.dart';
@@ -44,14 +42,13 @@ class _OdagadaAppState extends State<OdagadaApp> {
     Widget mapBuilder({
       required void Function(MapController) onReady,
       required PinTapCallback onPinTap,
+      required void Function(LatLng center, double radiusMeters) onCameraIdle,
     }) =>
-        GoogleMapView(onReady: onReady, onPinTap: onPinTap);
-
-    final pipeline = RecommendationPipeline(
-      locationEngine: LocationEngine(minMoveMeters: 200),
-      registry: registry,
-      recommendEngine: RecommendEngine(),
-    );
+        GoogleMapView(
+          onReady: onReady,
+          onPinTap: onPinTap,
+          onCameraIdle: onCameraIdle,
+        );
 
     return MaterialApp(
       title: '오다가다',
@@ -59,7 +56,6 @@ class _OdagadaAppState extends State<OdagadaApp> {
       home: MapScreen(
         auth: _auth,
         locationSource: locationSource,
-        pipeline: pipeline,
         registry: registry,
         navigationLauncher: NavigationLauncher(),
         mapBuilder: mapBuilder,
