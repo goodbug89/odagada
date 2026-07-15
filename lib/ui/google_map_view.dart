@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart' as gmap;
+import '../core/geo/geo_math.dart';
 import '../core/models/lat_lng.dart';
 import '../core/models/recommendation.dart';
 import 'map_view.dart';
@@ -15,10 +16,12 @@ import 'place_pin.dart';
 class GoogleMapView extends StatefulWidget {
   final void Function(MapController controller) onReady;
   final PinTapCallback onPinTap;
+  final void Function(LatLng center, double radiusMeters) onCameraIdle;
   const GoogleMapView({
     super.key,
     required this.onReady,
     required this.onPinTap,
+    required this.onCameraIdle,
   });
 
   @override
@@ -42,11 +45,40 @@ class _GoogleMapViewState extends State<GoogleMapView> implements MapController 
   gmap.LatLng _camTarget = _initialTarget;
   double _camZoom = _initialZoom;
 
+  gmap.LatLng? _car; // 최근 차 위치
+  bool _following = true; // 차 따라가기 여부
+  bool _programmaticMove = false; // 우리가 animateCamera로 움직이는 중(제스처와 구분)
+
   @override
-  void moveCamera(LatLng center) {
-    _controller?.animateCamera(
-      gmap.CameraUpdate.newLatLng(gmap.LatLng(center.lat, center.lng)),
-    );
+  void setCar(LatLng car) {
+    _car = gmap.LatLng(car.lat, car.lng);
+    if (_following) _animateTo(_car!);
+  }
+
+  @override
+  void recenter() {
+    _following = true;
+    if (_car != null) _animateTo(_car!);
+  }
+
+  void _animateTo(gmap.LatLng pos) {
+    _programmaticMove = true; // 이어지는 onCameraMoveStarted는 우리 이동
+    _controller?.animateCamera(gmap.CameraUpdate.newLatLng(pos));
+  }
+
+  Future<void> _handleCameraIdle() async {
+    _programmaticMove = false; // 이동 종료
+    final c = _controller;
+    if (c == null) return;
+    final region = await c.getVisibleRegion();
+    final ne = region.northeast;
+    final sw = region.southwest;
+    final center = LatLng((ne.latitude + sw.latitude) / 2,
+        (ne.longitude + sw.longitude) / 2);
+    final radius = GeoMath.distanceMeters(
+            center, LatLng(ne.latitude, ne.longitude))
+        .clamp(200.0, 50000.0);
+    widget.onCameraIdle(center, radius);
   }
 
   @override
@@ -97,12 +129,17 @@ class _GoogleMapViewState extends State<GoogleMapView> implements MapController 
               myLocationButtonEnabled: false,
               zoomControlsEnabled: false,
               style: _mapStyle,
+              onCameraMoveStarted: () {
+                // 우리 이동이 아니면 사용자가 손댄 것 → 따라가기 해제
+                if (!_programmaticMove) _following = false;
+              },
               onCameraMove: (pos) {
                 setState(() {
                   _camTarget = pos.target;
                   _camZoom = pos.zoom;
                 });
               },
+              onCameraIdle: _handleCameraIdle,
               onMapCreated: (c) {
                 _controller = c;
                 widget.onReady(this);

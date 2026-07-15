@@ -60,9 +60,9 @@ class _KakaoMapViewState extends State<KakaoMapView> implements MapController {
   }
 
   @override
-  void moveCamera(LatLng center) {
-    _web.runJavaScript('window.moveCamera(${center.lat}, ${center.lng});');
-  }
+  void setCar(LatLng car) {} // 레거시(구글로 전환됨) — 미사용
+  @override
+  void recenter() {} // 레거시 — 미사용
 
   @override
   void setPins(List<Recommendation> recs) {

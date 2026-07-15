@@ -5,7 +5,12 @@ import '../core/models/recommendation.dart';
 
 /// 지도 구현을 로직에서 분리하기 위한 컨트롤러 인터페이스.
 abstract class MapController {
-  void moveCamera(LatLng center);
+  /// 차(GPS) 위치 갱신. 따라가는 중이면 카메라가 이 위치로 이동.
+  void setCar(LatLng car);
+
+  /// 따라가기를 재개하고 차 위치로 카메라 복귀('내 위치' 버튼).
+  void recenter();
+
   void setPins(List<Recommendation> recs);
   void setSavedIds(Set<String> ids);
 }
@@ -17,4 +22,5 @@ typedef PinTapCallback = void Function(Poi poi);
 typedef MapViewBuilder = Widget Function({
   required void Function(MapController) onReady,
   required PinTapCallback onPinTap,
+  required void Function(LatLng center, double radiusMeters) onCameraIdle,
 });
