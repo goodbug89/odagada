@@ -15,6 +15,7 @@ class CategoryDot extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = poi.bucket;
     return GestureDetector(
+      behavior: HitTestBehavior.opaque, // 아이콘·이름 사이 여백도 탭 되게(마커 탭 관대하게)
       onTap: onTap,
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -51,6 +52,7 @@ class SavedPin extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = poi.bucket;
     return GestureDetector(
+      behavior: HitTestBehavior.opaque, // 아이콘·이름 사이 여백도 탭 되게(마커 탭 관대하게)
       onTap: onTap,
       child: Column(
         mainAxisSize: MainAxisSize.min,
