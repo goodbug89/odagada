@@ -31,6 +31,7 @@ class _FriendsScreenState extends State<FriendsScreen> {
   }
 
   Future<void> _reload() async {
+    if (!mounted) return;
     setState(() => _loading = true);
     try {
       final f = await widget.repo.listFriends();
@@ -90,6 +91,7 @@ class _FriendsScreenState extends State<FriendsScreen> {
       _toast('이미 친구이거나 만료된 초대예요.');
       return;
     }
+    if (!mounted) return;
     _codeCtrl.clear();
     await _reload();
     _toast('친구가 됐어요!');
@@ -174,6 +176,7 @@ class _FriendsScreenState extends State<FriendsScreen> {
                     icon: const Icon(Icons.person_remove_outlined),
                     onPressed: () async {
                       await widget.repo.removeFriend(f.id);
+                      if (!mounted) return;
                       await _reload();
                     },
                   ),
