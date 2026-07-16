@@ -3,6 +3,7 @@ import '../core/models/poi.dart';
 
 const double _dotSize = 30;
 const double _headSize = 40;
+const Color _friendBlue = Color(0xFF1B4F9B);
 
 /// 미저장 주변 장소: 작은 카테고리색 원형 아이콘 + 이름 라벨.
 /// 앵커: 원 중심이 기준점.
@@ -98,6 +99,126 @@ class SavedPin extends StatelessWidget {
           const SizedBox(height: 2),
           // 이름 라벨이 머리(44px)보다 넓어도 Column 폭을 넓히지 않게 고정 슬롯 안에서
           // 중앙 정렬로 넘치게 한다 → 머리 중심이 기준점(s.dx)에서 밀리지 않음.
+          SizedBox(
+            width: 44,
+            child: LimitedBox(
+              maxHeight: 30,
+              child: OverflowBox(
+                minWidth: 0,
+                maxWidth: 120,
+                alignment: Alignment.topCenter,
+                child: _NameLabel(text: poi.name, bold: true),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// 저장/친구 상태를 표현하는 핀. saved=내 저장(북마크), friendCount>0=친구 수(파란 배지),
+/// 둘 다=겹침(링 강조). 앵커: 머리 중심 x, 꼬리 끝(상단 46px)이 기준점.
+class PlacePin extends StatelessWidget {
+  final Poi poi;
+  final bool saved;
+  final int friendCount;
+  final VoidCallback onTap;
+  const PlacePin({
+    super.key,
+    required this.poi,
+    required this.saved,
+    required this.friendCount,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final c = poi.bucket;
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SizedBox(
+            width: 44,
+            height: _headSize,
+            child: Stack(
+              clipBehavior: Clip.none,
+              alignment: Alignment.center,
+              children: [
+                // 겹침 링(오버플로) — 머리 뒤에 파란 테두리 원.
+                if (saved && friendCount > 0)
+                  Container(
+                    key: const ValueKey('overlap-ring'),
+                    width: _headSize + 8,
+                    height: _headSize + 8,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(color: _friendBlue, width: 3),
+                    ),
+                  ),
+                // 머리
+                Container(
+                  width: _headSize,
+                  height: _headSize,
+                  decoration: BoxDecoration(
+                    color: c.color,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white, width: 3),
+                    boxShadow: const [
+                      BoxShadow(
+                          color: Color(0x55000000),
+                          blurRadius: 5,
+                          offset: Offset(0, 2)),
+                    ],
+                  ),
+                  child: Icon(c.icon, color: Colors.white, size: 20),
+                ),
+                // 내 저장 북마크(우상단)
+                if (saved)
+                  Positioned(
+                    right: -1,
+                    top: -2,
+                    child: Container(
+                      width: 16,
+                      height: 16,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: c.color, width: 1.5),
+                      ),
+                      child: Icon(Icons.bookmark, size: 10, color: c.color),
+                    ),
+                  ),
+                // 친구 수 파란 배지(좌상단)
+                if (friendCount > 0)
+                  Positioned(
+                    left: -4,
+                    top: -4,
+                    child: Container(
+                      constraints:
+                          const BoxConstraints(minWidth: 18, minHeight: 18),
+                      padding: const EdgeInsets.symmetric(horizontal: 3),
+                      decoration: BoxDecoration(
+                        color: _friendBlue,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white, width: 1.5),
+                      ),
+                      alignment: Alignment.center,
+                      child: Text('$friendCount',
+                          style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold)),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          Container(width: 3, height: 6, color: c.color),
+          const SizedBox(height: 2),
           SizedBox(
             width: 44,
             child: LimitedBox(

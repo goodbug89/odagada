@@ -34,4 +34,23 @@ void main() {
     expect(find.byIcon(Icons.local_cafe), findsOneWidget);
     expect(find.byIcon(Icons.bookmark), findsOneWidget);
   });
+
+  testWidgets('PlacePin: 내저장만 → 북마크, 배지·링 없음', (t) async {
+    await _pump(t, PlacePin(poi: _poi(), saved: true, friendCount: 0, onTap: () {}));
+    expect(find.byIcon(Icons.bookmark), findsOneWidget);
+    expect(find.text('0'), findsNothing);
+  });
+
+  testWidgets('PlacePin: 친구만 → 파란 숫자 배지, 북마크 없음', (t) async {
+    await _pump(t, PlacePin(poi: _poi(), saved: false, friendCount: 2, onTap: () {}));
+    expect(find.text('2'), findsOneWidget);
+    expect(find.byIcon(Icons.bookmark), findsNothing);
+  });
+
+  testWidgets('PlacePin: 겹침 → 북마크 + 배지 + 링', (t) async {
+    await _pump(t, PlacePin(poi: _poi(), saved: true, friendCount: 3, onTap: () {}));
+    expect(find.byIcon(Icons.bookmark), findsOneWidget);
+    expect(find.text('3'), findsOneWidget);
+    expect(find.byKey(const ValueKey('overlap-ring')), findsOneWidget);
+  });
 }
