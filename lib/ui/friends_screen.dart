@@ -50,9 +50,13 @@ class _FriendsScreenState extends State<FriendsScreen> {
   }
 
   Future<void> _createInvite() async {
-    final inv = await widget.repo.createInvite();
-    if (!mounted) return;
-    setState(() => _createdLink = inv.link);
+    try {
+      final inv = await widget.repo.createInvite();
+      if (!mounted) return;
+      setState(() => _createdLink = inv.link);
+    } catch (_) {
+      _toast('초대 링크 생성에 실패했어요.');
+    }
   }
 
   Future<void> _addByCode() async {

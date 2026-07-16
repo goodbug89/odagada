@@ -17,6 +17,11 @@ void main() {
     expect(f.avatarUrl, isNull);
   });
 
+  test('friendFromRow: display_name 빈 문자열도 기본값(아바타 크래시 방지)', () {
+    final f = friendFromRow({'id': 'u3', 'display_name': '', 'avatar_url': null});
+    expect(f.displayName, '친구');
+  });
+
   test('inviteInfoFromRow 매핑', () {
     final i = inviteInfoFromRow({'inviter_name': '영희', 'valid': true});
     expect(i.inviterName, '영희');

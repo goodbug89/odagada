@@ -15,11 +15,15 @@ class InviteInfo {
   const InviteInfo({required this.inviterName, required this.valid});
 }
 
-Friend friendFromRow(Map<String, dynamic> row) => Friend(
-      id: row['id'] as String,
-      displayName: (row['display_name'] as String?) ?? '친구',
-      avatarUrl: row['avatar_url'] as String?,
-    );
+Friend friendFromRow(Map<String, dynamic> row) {
+  final name = row['display_name'] as String?;
+  return Friend(
+    // null뿐 아니라 빈 문자열도 기본값으로(아바타 이니셜 .characters.first 크래시 방지).
+    id: row['id'] as String,
+    displayName: (name == null || name.isEmpty) ? '친구' : name,
+    avatarUrl: row['avatar_url'] as String?,
+  );
+}
 
 InviteInfo inviteInfoFromRow(Map<String, dynamic> row) => InviteInfo(
       inviterName: (row['inviter_name'] as String?) ?? '친구',
