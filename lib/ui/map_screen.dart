@@ -6,6 +6,8 @@ import '../core/models/lat_lng.dart';
 import '../core/models/poi.dart';
 import '../core/models/recommendation.dart';
 import '../friends/friend_repository.dart';
+import '../friends/friend_save.dart';
+import '../friends/social_repository.dart';
 import '../location/location_source.dart';
 import '../poi/poi_provider.dart';
 import '../poi/viewport_searcher.dart';
@@ -31,6 +33,7 @@ class MapScreen extends StatefulWidget {
   final MapViewBuilder mapBuilder;
   final SavedPlaceRepository savedRepo;
   final FriendRepository friendRepo;
+  final SocialRepository socialRepo;
   final Future<List<Poi>> Function(String query, LatLng? bias) textSearch;
 
   const MapScreen({
@@ -42,6 +45,7 @@ class MapScreen extends StatefulWidget {
     required this.mapBuilder,
     required this.savedRepo,
     required this.friendRepo,
+    required this.socialRepo,
     required this.textSearch,
   });
 
@@ -134,15 +138,24 @@ class _MapScreenState extends State<MapScreen> {
     _lastRadius = radiusMeters;
     final gen = ++_searchGen;
     final pois = await _searcher.search(center, radiusMeters);
+    // 친구 저장(실패해도 나머지는 진행)
+    List<FriendSave> friendSaves = const [];
+    try {
+      friendSaves = await widget.socialRepo.friendSavesNear(center, radiusMeters);
+    } catch (_) {}
     if (!mounted || gen != _searchGen) return; // 더 최신 검색이 시작됐으면 이 결과는 버림
     final ids = pois.map((p) => p.id).toSet();
-    final overlay = savedPoisInViewport(_savedPlaces, center, radiusMeters)
-        .where((p) => !ids.contains(p.id)); // 검색결과에 이미 있으면 중복 제거
-    final recs = [...pois, ...overlay]
+    final savedOverlay = savedPoisInViewport(_savedPlaces, center, radiusMeters)
+        .where((p) => !ids.contains(p.id)) // 검색결과에 이미 있으면 중복 제거
+        .toList();
+    final existing = {...ids, ...savedOverlay.map((p) => p.id)};
+    final social = friendOverlay(friendSaves, existing);
+    final recs = [...pois, ...savedOverlay, ...social.extraPins]
         .map((p) => Recommendation(poi: p, score: 0))
         .toList();
     _map?.setPins(recs);
     _map?.setSavedIds(_savedIds);
+    _map?.setFriendCounts(social.friendCounts);
   }
 
   Future<void> _onSaveToggle(Poi poi) async {
