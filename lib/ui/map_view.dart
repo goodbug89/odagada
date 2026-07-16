@@ -16,6 +16,7 @@ abstract class MapController {
 
   void setPins(List<Recommendation> recs);
   void setSavedIds(Set<String> ids);
+  void setFriendCounts(Map<String, int> byPlaceId);
 }
 
 /// 핀 탭 콜백 시그니처.

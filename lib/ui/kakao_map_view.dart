@@ -85,5 +85,8 @@ class _KakaoMapViewState extends State<KakaoMapView> implements MapController {
   void setSavedIds(Set<String> ids) {} // 레거시(구글로 전환됨) — 미사용
 
   @override
+  void setFriendCounts(Map<String, int> byPlaceId) {} // 레거시 미사용
+
+  @override
   Widget build(BuildContext context) => WebViewWidget(controller: _web);
 }

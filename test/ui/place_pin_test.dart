@@ -28,8 +28,8 @@ void main() {
     expect(tapped, isTrue);
   });
 
-  testWidgets('SavedPin: 이름 + 카테고리 아이콘 + 북마크 배지', (t) async {
-    await _pump(t, SavedPin(poi: _poi(), onTap: () {}));
+  testWidgets('PlacePin(saved:true): 이름 + 카테고리 아이콘 + 북마크 배지', (t) async {
+    await _pump(t, PlacePin(poi: _poi(), saved: true, friendCount: 0, onTap: () {}));
     expect(find.text('스타벅스'), findsOneWidget);
     expect(find.byIcon(Icons.local_cafe), findsOneWidget);
     expect(find.byIcon(Icons.bookmark), findsOneWidget);

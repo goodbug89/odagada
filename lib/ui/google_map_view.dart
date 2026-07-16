@@ -36,6 +36,7 @@ class _GoogleMapViewState extends State<GoogleMapView> implements MapController 
   gmap.GoogleMapController? _controller;
   List<Recommendation> _recs = const [];
   Set<String> _savedIds = const {};
+  Map<String, int> _friendCounts = const {};
 
   static const _initialTarget = gmap.LatLng(37.5665, 126.9780);
   static const _initialZoom = 15.0;
@@ -105,6 +106,12 @@ class _GoogleMapViewState extends State<GoogleMapView> implements MapController 
   void setSavedIds(Set<String> ids) {
     if (!mounted) return;
     setState(() => _savedIds = ids);
+  }
+
+  @override
+  void setFriendCounts(Map<String, int> byPlaceId) {
+    if (!mounted) return;
+    setState(() => _friendCounts = byPlaceId);
   }
 
   /// 위도·경도를 해당 줌의 월드 픽셀 좌표로 투영(Web Mercator).
@@ -183,11 +190,17 @@ class _GoogleMapViewState extends State<GoogleMapView> implements MapController 
         continue;
       }
       final saved = _savedIds.contains(r.poi.id);
-      if (saved) {
+      final fc = _friendCounts[r.poi.id] ?? 0;
+      if (saved || fc > 0) {
         pins.add(Positioned(
           left: s.dx - 22, // 머리 폭 44의 절반
           top: s.dy - 46,  // 꼬리 끝이 기준점
-          child: SavedPin(poi: r.poi, onTap: () => widget.onPinTap(r.poi)),
+          child: PlacePin(
+            poi: r.poi,
+            saved: saved,
+            friendCount: fc,
+            onTap: () => widget.onPinTap(r.poi),
+          ),
         ));
       } else {
         pins.add(Positioned(
