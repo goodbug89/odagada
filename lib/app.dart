@@ -7,6 +7,7 @@ import 'location/location_source.dart';
 import 'poi/poi_provider.dart';
 import 'poi/google_places_provider.dart';
 import 'config/app_config.dart';
+import 'friends/friend_repository.dart';
 import 'saved/saved_place_repository.dart';
 import 'ui/map_screen.dart';
 import 'ui/map_view.dart';
@@ -64,6 +65,7 @@ class _OdagadaAppState extends State<OdagadaApp> {
         navigationLauncher: NavigationLauncher(),
         mapBuilder: mapBuilder,
         savedRepo: SavedPlaceRepository(),
+        friendRepo: SupabaseFriendRepository(),
         textSearch: (query, bias) =>
             placesProvider.searchText(query, bias: bias),
       ),

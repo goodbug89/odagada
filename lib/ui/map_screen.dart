@@ -5,6 +5,7 @@ import '../core/geo/geo_math.dart';
 import '../core/models/lat_lng.dart';
 import '../core/models/poi.dart';
 import '../core/models/recommendation.dart';
+import '../friends/friend_repository.dart';
 import '../location/location_source.dart';
 import '../poi/poi_provider.dart';
 import '../poi/viewport_searcher.dart';
@@ -12,6 +13,7 @@ import '../saved/saved_place.dart';
 import '../saved/saved_place_repository.dart';
 import '../saved/saved_overlay.dart';
 import 'account_button.dart';
+import 'friends_screen.dart';
 import 'map_view.dart';
 import 'info_card.dart';
 import 'login_sheet.dart';
@@ -28,6 +30,7 @@ class MapScreen extends StatefulWidget {
   final NavigationLauncher navigationLauncher;
   final MapViewBuilder mapBuilder;
   final SavedPlaceRepository savedRepo;
+  final FriendRepository friendRepo;
   final Future<List<Poi>> Function(String query, LatLng? bias) textSearch;
 
   const MapScreen({
@@ -38,6 +41,7 @@ class MapScreen extends StatefulWidget {
     required this.navigationLauncher,
     required this.mapBuilder,
     required this.savedRepo,
+    required this.friendRepo,
     required this.textSearch,
   });
 
@@ -176,7 +180,12 @@ class _MapScreenState extends State<MapScreen> {
       appBar: AppBar(
         title: const Text('오다가다'),
         actions: [
-          AccountButton(auth: widget.auth),
+          AccountButton(
+            auth: widget.auth,
+            onFriends: () => Navigator.of(context).push(MaterialPageRoute(
+              builder: (_) => FriendsScreen(repo: widget.friendRepo),
+            )),
+          ),
           IconButton(
             icon: const Icon(Icons.search),
             tooltip: '검색',

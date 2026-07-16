@@ -5,7 +5,8 @@ import 'login_sheet.dart';
 /// 앱바 계정 버튼. 익명↔로그인 상태를 AuthController로부터 반영.
 class AccountButton extends StatelessWidget {
   final AuthController auth;
-  const AccountButton({super.key, required this.auth});
+  final VoidCallback? onFriends;
+  const AccountButton({super.key, required this.auth, this.onFriends});
 
   @override
   Widget build(BuildContext context) {
@@ -26,10 +27,12 @@ class AccountButton extends StatelessWidget {
           tooltip: name,
           onSelected: (v) {
             if (v == 'signout') auth.signOut();
+            if (v == 'friends') onFriends?.call();
           },
           itemBuilder: (_) => [
             PopupMenuItem(enabled: false, child: Text(name)),
             const PopupMenuDivider(),
+            const PopupMenuItem(value: 'friends', child: Text('친구')),
             const PopupMenuItem(value: 'signout', child: Text('로그아웃')),
           ],
         );
