@@ -98,4 +98,30 @@ void main() {
     await t.tap(find.byIcon(Icons.close));
     expect(closed, isTrue);
   });
+
+  testWidgets('친구 저장 섹션: N명 + 이름별 메모', (t) async {
+    final poi = const Poi(
+      id: 'p1', name: '금양화로', position: LatLng(37.5, 127.0),
+      category: '맛집', bucket: PlaceCategory.restaurant, distanceMeters: 50);
+    await t.pumpWidget(MaterialApp(home: Scaffold(body: InfoCard(
+      poi: poi, onNavigate: () {}, onSave: () {}, onClose: () {},
+      friendNames: const ['철수', '영희'], friendMemos: const ['여기 좋아요', ''],
+    ))));
+    expect(find.textContaining('친구 2명'), findsOneWidget);
+    expect(find.textContaining('철수'), findsOneWidget);
+    expect(find.textContaining('여기 좋아요'), findsOneWidget);
+    expect(find.text('영희'), findsOneWidget); // 메모 없으면 이름만
+  });
+
+  testWidgets('내 저장 + 내 메모 섹션', (t) async {
+    final poi = const Poi(
+      id: 'p1', name: '금양화로', position: LatLng(37.5, 127.0),
+      category: '맛집', bucket: PlaceCategory.restaurant, distanceMeters: 50);
+    await t.pumpWidget(MaterialApp(home: Scaffold(body: InfoCard(
+      poi: poi, onNavigate: () {}, onSave: () {}, onClose: () {},
+      isSaved: true, myMemo: '내가 왔던 곳',
+    ))));
+    expect(find.textContaining('내가 저장'), findsOneWidget);
+    expect(find.textContaining('내가 왔던 곳'), findsOneWidget);
+  });
 }

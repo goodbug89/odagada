@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../core/models/poi.dart';
 
+const Color _friendBlue = Color(0xFF1B4F9B);
+
 /// 핀 탭 시 하단에 뜨는 정보 카드. 운전 중 가독성 위해 큰 글씨. 내용이 길면 스크롤.
 class InfoCard extends StatelessWidget {
   final Poi poi;
@@ -8,6 +10,9 @@ class InfoCard extends StatelessWidget {
   final bool isSaved;
   final VoidCallback onSave;
   final VoidCallback onClose;
+  final String? myMemo;
+  final List<String>? friendNames;
+  final List<String>? friendMemos;
   const InfoCard({
     super.key,
     required this.poi,
@@ -15,6 +20,9 @@ class InfoCard extends StatelessWidget {
     this.isSaved = false,
     required this.onSave,
     required this.onClose,
+    this.myMemo,
+    this.friendNames,
+    this.friendMemos,
   });
 
   String get _distanceText {
@@ -86,6 +94,43 @@ class InfoCard extends StatelessWidget {
                                 style: const TextStyle(
                                     fontSize: 14, color: Colors.black54)),
                           )),
+                    ],
+                    if (isSaved) ...[
+                      const SizedBox(height: 12),
+                      Row(children: [
+                        const Icon(Icons.check_circle,
+                            size: 18, color: Color(0xFFFF5E13)),
+                        const SizedBox(width: 6),
+                        const Text('내가 저장',
+                            style: TextStyle(fontWeight: FontWeight.bold)),
+                      ]),
+                      if (myMemo != null && myMemo!.isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 2, left: 24),
+                          child: Text('"$myMemo"',
+                              style: const TextStyle(color: Colors.black54)),
+                        ),
+                    ],
+                    if (friendNames != null && friendNames!.isNotEmpty) ...[
+                      const SizedBox(height: 12),
+                      Row(children: [
+                        const Icon(Icons.group, size: 18, color: _friendBlue),
+                        const SizedBox(width: 6),
+                        Text('친구 ${friendNames!.length}명 저장',
+                            style: const TextStyle(
+                                fontWeight: FontWeight.bold, color: _friendBlue)),
+                      ]),
+                      ...List.generate(friendNames!.length, (i) {
+                        final name = friendNames![i];
+                        final memo = (friendMemos != null && i < friendMemos!.length)
+                            ? friendMemos![i]
+                            : '';
+                        return Padding(
+                          padding: const EdgeInsets.only(top: 2, left: 24),
+                          child: Text(memo.isEmpty ? name : '$name — "$memo"',
+                              style: const TextStyle(color: Colors.black87)),
+                        );
+                      }),
                     ],
                   ],
                 ),
