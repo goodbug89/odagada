@@ -73,15 +73,20 @@ class PlacePin extends StatelessWidget {
               clipBehavior: Clip.none,
               alignment: Alignment.center,
               children: [
-                // 겹침 링(오버플로) — 머리 뒤에 파란 테두리 원.
+                // 겹침 링(오버플로) — 머리 뒤 파란 테두리 원 + 글로우로 강조("최강 신뢰 신호").
                 if (saved && friendCount > 0)
                   Container(
                     key: const ValueKey('overlap-ring'),
-                    width: _headSize + 8,
-                    height: _headSize + 8,
+                    width: _headSize + 16,
+                    height: _headSize + 16,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      border: Border.all(color: _friendBlue, width: 3),
+                      border: Border.all(color: _friendBlue, width: 4),
+                      boxShadow: [
+                        BoxShadow(
+                            color: _friendBlue.withValues(alpha: 0.55),
+                            blurRadius: 8),
+                      ],
                     ),
                   ),
                 // 머리

@@ -1,6 +1,8 @@
 -- v2.1b-1 소셜 지도: saved_places 친구 조회 + 뷰포트 친구-저장 집계
 
 -- 친구는 accepted 친구의 is_public 저장 조회 가능(0002 본인정책에 OR로 추가).
+-- (create policy 재실행 불가라 drop if exists 선행 — 마이그레이션 재적용 안전)
+drop policy if exists saved_places_friends_select on saved_places;
 create policy saved_places_friends_select on saved_places for select
   using (
     owner_id = auth.uid() or (

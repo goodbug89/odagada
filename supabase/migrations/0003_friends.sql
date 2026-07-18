@@ -20,16 +20,21 @@ alter table friendships enable row level security;
 alter table invites enable row level security;
 
 -- friendships: 당사자만 조회·삭제. 삽입 정책 없음 = 직접 삽입 차단(accept_invite로만).
+-- (create policy는 재실행 불가라 drop if exists 선행 — 마이그레이션 재적용 안전)
+drop policy if exists friendships_select on friendships;
 create policy friendships_select on friendships for select
   using (auth.uid() = user_a or auth.uid() = user_b);
+drop policy if exists friendships_delete on friendships;
 create policy friendships_delete on friendships for delete
   using (auth.uid() = user_a or auth.uid() = user_b);
 
 -- invites: 초대자 본인만.
+drop policy if exists invites_owner_all on invites;
 create policy invites_owner_all on invites for all
   using (auth.uid() = inviter_id) with check (auth.uid() = inviter_id);
 
 -- profiles: 친구는 서로 이름·아바타 조회 가능(0001 본인정책에 OR로 추가).
+drop policy if exists profiles_friends_select on profiles;
 create policy profiles_friends_select on profiles for select
   using (
     id = auth.uid() or exists (
