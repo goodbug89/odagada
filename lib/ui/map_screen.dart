@@ -60,6 +60,7 @@ class _MapScreenState extends State<MapScreen> {
   String? _error;
   Set<String> _savedIds = {};
   List<SavedPlace> _savedPlaces = const [];
+  Map<String, FriendSave> _friendSaves = const {};
   bool _following = true;
   late final ViewportSearcher _searcher = ViewportSearcher(widget.registry);
 
@@ -149,7 +150,8 @@ class _MapScreenState extends State<MapScreen> {
         .where((p) => !ids.contains(p.id)) // 검색결과에 이미 있으면 중복 제거
         .toList();
     final existing = {...ids, ...savedOverlay.map((p) => p.id)};
-    final social = friendOverlay(friendSaves, existing);
+    final social = friendOverlay(friendSaves, existing, center);
+    _friendSaves = {for (final fs in friendSaves) fs.placeId: fs};
     final recs = [...pois, ...savedOverlay, ...social.extraPins]
         .map((p) => Recommendation(poi: p, score: 0))
         .toList();
@@ -176,6 +178,13 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   void _onPinTap(Poi poi) => setState(() => _selected = poi);
+
+  String? _myMemoFor(String placeId) {
+    for (final p in _savedPlaces) {
+      if (p.placeId == placeId) return p.memo;
+    }
+    return null;
+  }
 
   @override
   void dispose() {
@@ -277,6 +286,9 @@ class _MapScreenState extends State<MapScreen> {
                 isSaved: _savedIds.contains(_selected!.id),
                 onSave: () => _onSaveToggle(_selected!),
                 onClose: () => setState(() => _selected = null),
+                myMemo: _myMemoFor(_selected!.id),
+                friendNames: _friendSaves[_selected!.id]?.friendNames,
+                friendMemos: _friendSaves[_selected!.id]?.memos,
               ),
             ),
         ],
