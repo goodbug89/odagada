@@ -1,3 +1,4 @@
+import '../core/geo/geo_math.dart';
 import '../core/models/lat_lng.dart';
 import '../core/models/place_category.dart';
 import '../core/models/poi.dart';
@@ -43,19 +44,20 @@ FriendSave friendSaveFromRow(Map<String, dynamic> row) => FriendSave(
 /// friendCounts: place_id별 친구 수(모든 친구-저장). extraPins: 지도에 아직
 /// 없는(검색결과·내저장에 없는) 친구-only 장소를 Poi로 변환한 것.
 ({List<Poi> extraPins, Map<String, int> friendCounts}) friendOverlay(
-    List<FriendSave> friendSaves, Set<String> existingIds) {
+    List<FriendSave> friendSaves, Set<String> existingIds, LatLng center) {
   final counts = <String, int>{};
   final extra = <Poi>[];
   for (final fs in friendSaves) {
     counts[fs.placeId] = fs.friendCount;
     if (!existingIds.contains(fs.placeId)) {
+      final pos = LatLng(fs.lat, fs.lng);
       extra.add(Poi(
         id: fs.placeId,
         name: fs.name,
-        position: LatLng(fs.lat, fs.lng),
+        position: pos,
         category: fs.bucket.label,
         bucket: fs.bucket,
-        distanceMeters: 0,
+        distanceMeters: GeoMath.distanceMeters(center, pos),
       ));
     }
   }
