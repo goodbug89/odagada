@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../auth/auth_controller.dart';
 import '../core/geo/geo_math.dart';
 import '../core/models/lat_lng.dart';
+import '../core/models/lat_lng_bounds.dart';
 import '../core/models/poi.dart';
 import '../core/models/recommendation.dart';
 import '../friends/friend_repository.dart';
@@ -10,7 +11,7 @@ import '../friends/friend_save.dart';
 import '../friends/social_repository.dart';
 import '../location/location_source.dart';
 import '../poi/poi_provider.dart';
-import '../poi/viewport_searcher.dart';
+import '../poi/tiled_poi_source.dart';
 import '../saved/saved_place.dart';
 import '../saved/saved_place_repository.dart';
 import '../saved/saved_overlay.dart';
@@ -62,13 +63,13 @@ class _MapScreenState extends State<MapScreen> {
   List<SavedPlace> _savedPlaces = const [];
   Map<String, FriendSave> _friendSaves = const {};
   bool _following = true;
-  late final ViewportSearcher _searcher = ViewportSearcher(widget.registry);
+  late final TiledPoiSource _poiSource = TiledPoiSource(widget.registry);
 
   Timer? _idleDebounce;
-  LatLng? _lastSearchCenter;
-  double? _lastSearchRadius;
-  LatLng? _lastCenter;
-  double? _lastRadius;
+  LatLngBounds? _lastSearchBounds;
+  double? _lastSearchZoom;
+  LatLngBounds? _lastBounds;
+  double? _lastZoom;
   int _searchGen = 0;
 
   @override
@@ -112,41 +113,43 @@ class _MapScreenState extends State<MapScreen> {
       });
     }
     _map?.setSavedIds(ids);
-    // 저장이 바뀌면 현재 화면에 즉시 반영(마지막 검색 좌표로 재병합)
-    final c = _lastCenter, r = _lastRadius;
-    if (c != null && r != null) _runSearch(c, r);
+    // 저장이 바뀌면 현재 화면에 즉시 반영(마지막 검색 영역으로 재병합)
+    final b = _lastBounds, z = _lastZoom;
+    if (b != null && z != null) _runSearch(b, z);
   }
 
   // 카메라 정지 → 디바운스 → 중심 30m 이상 이동했을 때만 뷰포트 검색.
-  void _onCameraIdle(LatLng center, double radiusMeters) {
+  void _onCameraIdle(LatLngBounds bounds, double zoom) {
     _idleDebounce?.cancel();
     _idleDebounce = Timer(const Duration(milliseconds: 400), () {
-      final last = _lastSearchCenter;
-      final lastR = _lastSearchRadius;
-      if (last != null && lastR != null) {
-        final moved = GeoMath.distanceMeters(last, center);
-        final radiusChange = (radiusMeters - lastR).abs() / lastR;
-        if (moved < 30 && radiusChange < 0.2) return; // 거의 안 움직이고 줌도 그대로 → 스킵
+      final last = _lastSearchBounds;
+      final lastZ = _lastSearchZoom;
+      if (last != null && lastZ != null) {
+        final moved = GeoMath.distanceMeters(last.center, bounds.center);
+        if (moved < 30 && (zoom - lastZ).abs() < 0.1) return; // 거의 안 움직이고 줌도 그대로 → 스킵
       }
-      _lastSearchCenter = center;
-      _lastSearchRadius = radiusMeters;
-      _runSearch(center, radiusMeters);
+      _lastSearchBounds = bounds;
+      _lastSearchZoom = zoom;
+      _runSearch(bounds, zoom);
     });
   }
 
-  Future<void> _runSearch(LatLng center, double radiusMeters) async {
-    _lastCenter = center;
-    _lastRadius = radiusMeters;
+  Future<void> _runSearch(LatLngBounds bounds, double zoom) async {
+    _lastBounds = bounds;
+    _lastZoom = zoom;
     final gen = ++_searchGen;
-    final pois = await _searcher.search(center, radiusMeters);
+    final pois = await _poiSource.load(bounds, zoom);
+    // 오버레이·친구조회용 중심·반경을 뷰포트에서 파생
+    final center = bounds.center;
+    final radius = GeoMath.distanceMeters(center, bounds.ne);
     // 친구 저장(실패해도 나머지는 진행)
     List<FriendSave> friendSaves = const [];
     try {
-      friendSaves = await widget.socialRepo.friendSavesNear(center, radiusMeters);
+      friendSaves = await widget.socialRepo.friendSavesNear(center, radius);
     } catch (_) {}
     if (!mounted || gen != _searchGen) return; // 더 최신 검색이 시작됐으면 이 결과는 버림
     final ids = pois.map((p) => p.id).toSet();
-    final savedOverlay = savedPoisInViewport(_savedPlaces, center, radiusMeters)
+    final savedOverlay = savedPoisInViewport(_savedPlaces, center, radius)
         .where((p) => !ids.contains(p.id)) // 검색결과에 이미 있으면 중복 제거
         .toList();
     final existing = {...ids, ...savedOverlay.map((p) => p.id)};
@@ -214,7 +217,7 @@ class _MapScreenState extends State<MapScreen> {
             onPressed: () => Navigator.of(context).push(MaterialPageRoute(
               builder: (_) => SearchScreen(
                 textSearch: widget.textSearch,
-                bias: _lastCenter,
+                bias: _lastBounds?.center,
                 savedRepo: widget.savedRepo,
                 auth: widget.auth,
                 onChanged: _reloadSaved,

@@ -2,7 +2,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'auth/auth_controller.dart';
-import 'core/models/lat_lng.dart';
+import 'core/models/lat_lng_bounds.dart';
 import 'location/location_source.dart';
 import 'poi/poi_provider.dart';
 import 'poi/google_places_provider.dart';
@@ -44,7 +44,7 @@ class _OdagadaAppState extends State<OdagadaApp> {
     Widget mapBuilder({
       required void Function(MapController) onReady,
       required PinTapCallback onPinTap,
-      required void Function(LatLng center, double radiusMeters) onCameraIdle,
+      required void Function(LatLngBounds bounds, double zoom) onCameraIdle,
       required VoidCallback onMapTap,
       required void Function(bool following) onFollowChanged,
     }) =>

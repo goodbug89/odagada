@@ -1,8 +1,8 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart' as gmap;
-import '../core/geo/geo_math.dart';
 import '../core/models/lat_lng.dart';
+import '../core/models/lat_lng_bounds.dart';
 import '../core/models/recommendation.dart';
 import 'map_view.dart';
 import 'place_pin.dart';
@@ -16,7 +16,7 @@ import 'place_pin.dart';
 class GoogleMapView extends StatefulWidget {
   final void Function(MapController controller) onReady;
   final PinTapCallback onPinTap;
-  final void Function(LatLng center, double radiusMeters) onCameraIdle;
+  final void Function(LatLngBounds bounds, double zoom) onCameraIdle;
   final VoidCallback onMapTap;
   final void Function(bool following) onFollowChanged;
   const GoogleMapView({
@@ -88,12 +88,11 @@ class _GoogleMapViewState extends State<GoogleMapView> implements MapController 
     final ne = region.northeast;
     final sw = region.southwest;
     if (ne.latitude == sw.latitude && ne.longitude == sw.longitude) return; // 레이아웃 전 퇴화 영역 방어
-    final center = LatLng((ne.latitude + sw.latitude) / 2,
-        (ne.longitude + sw.longitude) / 2);
-    final radius = GeoMath.distanceMeters(
-            center, LatLng(ne.latitude, ne.longitude))
-        .clamp(200.0, 50000.0);
-    widget.onCameraIdle(center, radius);
+    final bounds = LatLngBounds(
+      ne: LatLng(ne.latitude, ne.longitude),
+      sw: LatLng(sw.latitude, sw.longitude),
+    );
+    widget.onCameraIdle(bounds, _camZoom);
   }
 
   @override

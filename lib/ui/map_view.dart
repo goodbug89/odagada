@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 import '../core/models/lat_lng.dart';
+import '../core/models/lat_lng_bounds.dart';
 import '../core/models/poi.dart';
 import '../core/models/recommendation.dart';
 
@@ -26,7 +27,7 @@ typedef PinTapCallback = void Function(Poi poi);
 typedef MapViewBuilder = Widget Function({
   required void Function(MapController) onReady,
   required PinTapCallback onPinTap,
-  required void Function(LatLng center, double radiusMeters) onCameraIdle,
+  required void Function(LatLngBounds bounds, double zoom) onCameraIdle,
   required VoidCallback onMapTap,
   required void Function(bool following) onFollowChanged,
 });
