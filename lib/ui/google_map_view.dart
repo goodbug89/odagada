@@ -41,10 +41,14 @@ class _GoogleMapViewState extends State<GoogleMapView> implements MapController 
   static const _initialTarget = gmap.LatLng(37.5665, 126.9780);
   static const _initialZoom = 15.0;
 
-  // 구글 기본 POI·대중교통 라벨 숨김(우리 핀만 보이게).
+  // 구글 기본의 "파란 숫자 마커"(우리 친구배지와 혼동)를 모두 제거해 우리 핀만 보이게.
+  // - poi 전체 off: 구글 상호 아이콘·라벨 제거
+  // - transit 전체 off: 정류장 마커·라벨·노선 지오메트리 제거
+  // - road labels.icon off: 도로 노선번호 shield("48"·"6" 등) 제거(도로 이름·지오메트리는 유지)
   static const _mapStyle =
-      '[{"featureType":"poi","elementType":"labels","stylers":[{"visibility":"off"}]},'
-      '{"featureType":"transit","elementType":"labels","stylers":[{"visibility":"off"}]}]';
+      '[{"featureType":"poi","stylers":[{"visibility":"off"}]},'
+      '{"featureType":"transit","stylers":[{"visibility":"off"}]},'
+      '{"featureType":"road","elementType":"labels.icon","stylers":[{"visibility":"off"}]}]';
 
   // 현재 카메라 상태(오버레이 핀 위치 계산용). onCameraMove로 갱신.
   gmap.LatLng _camTarget = _initialTarget;
