@@ -4,6 +4,7 @@ import '../auth/auth_controller.dart';
 import '../core/geo/geo_math.dart';
 import '../core/models/lat_lng.dart';
 import '../core/models/lat_lng_bounds.dart';
+import '../core/models/place_category.dart';
 import '../core/models/poi.dart';
 import '../core/models/recommendation.dart';
 import '../friends/friend_repository.dart';
@@ -16,6 +17,7 @@ import '../saved/saved_place.dart';
 import '../saved/saved_place_repository.dart';
 import '../saved/saved_overlay.dart';
 import 'account_button.dart';
+import 'category_filter_sheet.dart';
 import 'friends_screen.dart';
 import 'map_view.dart';
 import 'info_card.dart';
@@ -63,7 +65,10 @@ class _MapScreenState extends State<MapScreen> {
   List<SavedPlace> _savedPlaces = const [];
   Map<String, FriendSave> _friendSaves = const {};
   bool _following = true;
-  late final TiledPoiSource _poiSource = TiledPoiSource(widget.registry);
+  // 임계 줌 16 미만이면 일반 POI 검색 자체를 건너뛴다(렌더 게이트와 같은 값).
+  late final TiledPoiSource _poiSource =
+      TiledPoiSource(widget.registry, minBrowseZoom: 16);
+  Set<PlaceCategory> _visibleCategories = PlaceCategory.values.toSet();
 
   Timer? _idleDebounce;
   LatLngBounds? _lastSearchBounds;
@@ -138,7 +143,10 @@ class _MapScreenState extends State<MapScreen> {
     _lastBounds = bounds;
     _lastZoom = zoom;
     final gen = ++_searchGen;
-    final pois = await _poiSource.load(bounds, zoom);
+    // 일반 POI만 카테고리 필터 적용(친구/저장 오버레이는 아래에서 무관하게 병합).
+    final pois = (await _poiSource.load(bounds, zoom))
+        .where((p) => _visibleCategories.contains(p.bucket))
+        .toList();
     // 오버레이·친구조회용 중심·반경을 뷰포트에서 파생
     final center = bounds.center;
     final radius = GeoMath.distanceMeters(center, bounds.ne);
@@ -223,6 +231,19 @@ class _MapScreenState extends State<MapScreen> {
                 onChanged: _reloadSaved,
               ),
             )),
+          ),
+          IconButton(
+            icon: const Icon(Icons.filter_list),
+            tooltip: '카테고리 필터',
+            onPressed: () async {
+              final sel =
+                  await showCategoryFilterSheet(context, _visibleCategories);
+              if (sel == null || !mounted) return;
+              setState(() => _visibleCategories = sel);
+              // 캐시 재필터(타일 이미 있으면 네트워크 0)로 즉시 반영.
+              final b = _lastBounds, z = _lastZoom;
+              if (b != null && z != null) _runSearch(b, z);
+            },
           ),
           IconButton(
             icon: const Icon(Icons.bookmarks_outlined),
