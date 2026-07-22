@@ -5,7 +5,7 @@ const double _dotSize = 30;
 const double _headSize = 40;
 const Color _friendBlue = Color(0xFF1B4F9B);
 
-/// 미저장 주변 장소: 작은 카테고리색 원형 아이콘 + 이름 라벨.
+/// 미저장 주변 장소: 작은 카테고리색 원형 아이콘.
 /// 앵커: 원 중심이 기준점.
 class CategoryDot extends StatelessWidget {
   final Poi poi;
@@ -16,27 +16,20 @@ class CategoryDot extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = poi.bucket;
     return GestureDetector(
-      behavior: HitTestBehavior.opaque, // 아이콘·이름 사이 여백도 탭 되게(마커 탭 관대하게)
+      behavior: HitTestBehavior.opaque, // 점 히트영역(작아지므로 opaque 유지)
       onTap: onTap,
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: _dotSize,
-            height: _dotSize,
-            decoration: BoxDecoration(
-              color: c.color,
-              shape: BoxShape.circle,
-              border: Border.all(color: Colors.white, width: 2),
-              boxShadow: const [
-                BoxShadow(color: Color(0x40000000), blurRadius: 3, offset: Offset(0, 1)),
-              ],
-            ),
-            child: Icon(c.icon, color: Colors.white, size: 17),
-          ),
-          const SizedBox(width: 4),
-          _NameLabel(text: poi.name, bold: false),
-        ],
+      child: Container(
+        width: _dotSize,
+        height: _dotSize,
+        decoration: BoxDecoration(
+          color: c.color,
+          shape: BoxShape.circle,
+          border: Border.all(color: Colors.white, width: 2),
+          boxShadow: const [
+            BoxShadow(color: Color(0x40000000), blurRadius: 3, offset: Offset(0, 1)),
+          ],
+        ),
+        child: Icon(c.icon, color: Colors.white, size: 17),
       ),
     );
   }

@@ -19,10 +19,10 @@ Future<void> _pump(WidgetTester t, Widget w) => t.pumpWidget(
     );
 
 void main() {
-  testWidgets('CategoryDot: 이름 + 카테고리 아이콘 표시, 탭 콜백', (t) async {
+  testWidgets('CategoryDot: 이름표 없이 카테고리 아이콘만, 탭 콜백', (t) async {
     var tapped = false;
     await _pump(t, CategoryDot(poi: _poi(), onTap: () => tapped = true));
-    expect(find.text('스타벅스'), findsOneWidget);
+    expect(find.text('스타벅스'), findsNothing); // 일반 POI는 라벨 숨김
     expect(find.byIcon(Icons.local_cafe), findsOneWidget);
     await t.tap(find.byType(CategoryDot));
     expect(tapped, isTrue);
