@@ -50,6 +50,9 @@ class _GoogleMapViewState extends State<GoogleMapView> implements MapController 
       '{"featureType":"transit","stylers":[{"visibility":"off"}]},'
       '{"featureType":"road","elementType":"labels.icon","stylers":[{"visibility":"off"}]}]';
 
+  // 이 줌 미만이면 일반(주변) POI 점은 그리지 않는다(친구/저장 핀은 항상).
+  static const _ambientMinZoom = 16.0;
+
   // 현재 카메라 상태(오버레이 핀 위치 계산용). onCameraMove로 갱신.
   gmap.LatLng _camTarget = _initialTarget;
   double _camZoom = _initialZoom;
@@ -205,7 +208,8 @@ class _GoogleMapViewState extends State<GoogleMapView> implements MapController 
             onTap: () => widget.onPinTap(r.poi),
           ),
         ));
-      } else {
+      } else if (_camZoom >= _ambientMinZoom) {
+        // 일반 POI는 임계 줌 이상에서만(축소 시 친구/저장만 보이게).
         pins.add(Positioned(
           left: s.dx - 15, // 원 지름 30의 절반(원 중심 = 기준점)
           top: s.dy - 15,
