@@ -6,6 +6,7 @@ Future<Set<PlaceCategory>?> showCategoryFilterSheet(
     BuildContext context, Set<PlaceCategory> current) {
   return showModalBottomSheet<Set<PlaceCategory>>(
     context: context,
+    isScrollControlled: true, // 내용(7종+전체+적용) 높이만큼 — 기본 캡의 하단 오버플로 방지
     builder: (ctx) => CategoryFilterSheet(
       initial: current,
       onApply: (sel) => Navigator.of(ctx).pop(sel),
@@ -36,10 +37,11 @@ class _CategoryFilterSheetState extends State<CategoryFilterSheet> {
   @override
   Widget build(BuildContext context) {
     return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(8, 12, 8, 12),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
+      child: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(8, 12, 8, 12),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
           children: [
             CheckboxListTile(
               title: const Text('전체',
@@ -74,7 +76,8 @@ class _CategoryFilterSheetState extends State<CategoryFilterSheet> {
                 child: const Text('적용'),
               ),
             ),
-          ],
+            ],
+          ),
         ),
       ),
     );
