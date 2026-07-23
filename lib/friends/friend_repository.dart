@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'friend.dart';
+import 'invite_link.dart';
 
 /// 친구 그래프 저장소 인터페이스(화면은 이걸 의존 → 가짜로 위젯테스트 가능).
 abstract class FriendRepository {
@@ -16,14 +17,12 @@ class SupabaseFriendRepository implements FriendRepository {
   SupabaseFriendRepository([SupabaseClient? client])
       : _client = client ?? Supabase.instance.client;
 
-  static const _linkPrefix = 'io.supabase.odagada://invite/';
-
   @override
   Future<({String token, String link})> createInvite() async {
     final uid = _client.auth.currentUser!.id;
     final token = generateInviteToken();
     await _client.from('invites').insert({'token': token, 'inviter_id': uid});
-    return (token: token, link: '$_linkPrefix$token');
+    return (token: token, link: buildInviteLink(token));
   }
 
   @override
