@@ -93,12 +93,15 @@ class _MapScreenState extends State<MapScreen> {
   /// 앱 시작 시 최초 링크 + 실행 중 들어오는 링크를 함께 구독한다.
   Future<void> _initDeepLinks() async {
     final links = AppLinks();
+    Uri? initial;
     try {
-      final initial = await links.getInitialLink();
-      if (initial != null) _handleUri(initial);
+      initial = await links.getInitialLink();
     } catch (_) {
       // 최초 링크 조회 실패는 무시(딥링크 없이 실행된 경우 포함)
     }
+    if (!mounted) return; // await 도중 위젯이 dispose된 경우 구독하지 않는다.
+    if (initial != null) _handleUri(initial);
+    if (!mounted) return; // _handleUri가 await를 거치는 동안 dispose됐을 수 있다.
     _linkSub = links.uriLinkStream.listen(_handleUri, onError: (_) {});
   }
 
@@ -108,6 +111,7 @@ class _MapScreenState extends State<MapScreen> {
     if (token == null) return;
     if (widget.auth.user == null) {
       _pendingInviteToken = token; // 로그인되면 _onAuthChanged가 이어서 처리
+      if (!mounted) return;
       showLoginSheet(context, onGoogle: widget.auth.signInWithGoogle);
       return;
     }
