@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../friends/friend.dart';
 import '../friends/friend_repository.dart';
+import 'accept_invite_flow.dart';
 
 /// 친구 초대·추가·목록 화면. (계정 메뉴로만 진입 → 로그인 상태 가정, uid는 repo가 처리)
 class FriendsScreen extends StatefulWidget {
@@ -62,43 +63,10 @@ class _FriendsScreenState extends State<FriendsScreen> {
   Future<void> _addByCode() async {
     final token = _codeCtrl.text.trim();
     if (token.isEmpty) return;
-    late final InviteInfo info;
-    try {
-      info = await widget.repo.inviteInfo(token);
-    } catch (_) {
-      _toast('초대 확인에 실패했어요.');
-      return;
-    }
-    if (!info.valid) {
-      _toast('유효하지 않은 초대예요.');
-      return;
-    }
-    if (!mounted) return;
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        content: Text('${info.inviterName}님과 친구를 맺을까요?'),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('취소')),
-          FilledButton(
-              onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('수락')),
-        ],
-      ),
-    );
-    if (ok != true) return;
-    try {
-      await widget.repo.acceptInvite(token);
-    } catch (_) {
-      _toast('이미 친구이거나 만료된 초대예요.');
-      return;
-    }
-    if (!mounted) return;
+    final ok = await runAcceptInviteFlow(context, widget.repo, token);
+    if (!ok || !mounted) return;
     _codeCtrl.clear();
     await _reload();
-    _toast('친구가 됐어요!');
   }
 
   @override
