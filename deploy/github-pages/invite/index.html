@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>오다가다 친구 초대</title>
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", sans-serif;
+         margin: 0; padding: 32px 20px; background: #FFF6EF; color: #222; }
+  .wrap { max-width: 420px; margin: 0 auto; text-align: center; }
+  h1 { font-size: 22px; margin: 0 0 8px; }
+  p { color: #555; line-height: 1.6; }
+  .code { font-size: 30px; font-weight: 800; letter-spacing: 4px;
+          background: #fff; border: 2px dashed #FF7A2F; border-radius: 12px;
+          padding: 16px; margin: 20px 0; word-break: break-all; }
+  .btn { display: inline-block; background: #FF7A2F; color: #fff; text-decoration: none;
+         padding: 14px 24px; border-radius: 999px; font-weight: 700; }
+  .hint { font-size: 13px; color: #888; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>오다가다 친구 초대</h1>
+  <p>앱이 설치돼 있으면 자동으로 열려요.<br>안 열리면 아래 코드를 앱에 입력하세요.</p>
+  <div class="code" id="code">-</div>
+  <p><a class="btn" id="open" href="#">앱에서 열기</a></p>
+  <p class="hint">앱 → 계정 메뉴 → 친구 → "친구 추가"에 코드 입력</p>
+</div>
+<script>
+  var t = new URLSearchParams(location.search).get('t') || '';
+  document.getElementById('code').textContent = t || '코드 없음';
+  document.getElementById('open').href =
+      'io.supabase.odagada://invite/' + encodeURIComponent(t);
+</script>
+</body>
+</html>
