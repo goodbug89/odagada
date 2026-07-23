@@ -36,6 +36,21 @@
                 <category android:name="android.intent.category.BROWSABLE"/>
                 <data android:scheme="io.supabase.odagada" android:host="login-callback"/>
             </intent-filter>
+            <!-- https App Link: 메신저에서 탭 가능, autoVerify로 앱이 바로 열림 -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="https" android:host="goodbug89.github.io"
+                      android:pathPrefix="/invite"/>
+            </intent-filter>
+            <!-- 커스텀 스킴: 폴백 페이지의 "앱에서 열기" + 기존 공유 링크 하위호환 -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="io.supabase.odagada" android:host="invite"/>
+            </intent-filter>
         </activity>
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->

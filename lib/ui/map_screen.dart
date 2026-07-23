@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
 import '../auth/auth_controller.dart';
 import '../core/geo/geo_math.dart';
@@ -9,6 +10,7 @@ import '../core/models/poi.dart';
 import '../core/models/recommendation.dart';
 import '../friends/friend_repository.dart';
 import '../friends/friend_save.dart';
+import '../friends/invite_link.dart';
 import '../friends/social_repository.dart';
 import '../location/location_source.dart';
 import '../poi/poi_provider.dart';
@@ -16,6 +18,7 @@ import '../poi/tiled_poi_source.dart';
 import '../saved/saved_place.dart';
 import '../saved/saved_place_repository.dart';
 import '../saved/saved_overlay.dart';
+import 'accept_invite_flow.dart';
 import 'account_button.dart';
 import 'category_filter_sheet.dart';
 import 'friends_screen.dart';
@@ -76,11 +79,52 @@ class _MapScreenState extends State<MapScreen> {
   LatLngBounds? _lastBounds;
   double? _lastZoom;
   int _searchGen = 0;
+  StreamSubscription<Uri>? _linkSub;
+  String? _pendingInviteToken; // 미로그인 상태로 받은 초대(로그인 후 이어서 수락)
 
   @override
   void initState() {
     super.initState();
     _start();
+    _initDeepLinks();
+    widget.auth.addListener(_onAuthChanged);
+  }
+
+  /// 앱 시작 시 최초 링크 + 실행 중 들어오는 링크를 함께 구독한다.
+  Future<void> _initDeepLinks() async {
+    final links = AppLinks();
+    try {
+      final initial = await links.getInitialLink();
+      if (initial != null) _handleUri(initial);
+    } catch (_) {
+      // 최초 링크 조회 실패는 무시(딥링크 없이 실행된 경우 포함)
+    }
+    _linkSub = links.uriLinkStream.listen(_handleUri, onError: (_) {});
+  }
+
+  /// 초대 링크만 처리한다. 로그인 콜백 등 다른 URI는 무시.
+  void _handleUri(Uri uri) {
+    final token = inviteTokenFromUri(uri);
+    if (token == null) return;
+    if (widget.auth.user == null) {
+      _pendingInviteToken = token; // 로그인되면 _onAuthChanged가 이어서 처리
+      showLoginSheet(context, onGoogle: widget.auth.signInWithGoogle);
+      return;
+    }
+    _acceptInvite(token);
+  }
+
+  /// 로그인이 완료되면 보류해 둔 초대를 이어서 수락한다.
+  void _onAuthChanged() {
+    final token = _pendingInviteToken;
+    if (token == null || widget.auth.user == null) return;
+    _pendingInviteToken = null;
+    _acceptInvite(token);
+  }
+
+  Future<void> _acceptInvite(String token) async {
+    if (!mounted) return;
+    await runAcceptInviteFlow(context, widget.friendRepo, token);
   }
 
   Future<void> _start() async {
@@ -201,6 +245,8 @@ class _MapScreenState extends State<MapScreen> {
   void dispose() {
     _idleDebounce?.cancel();
     _sub?.cancel();
+    _linkSub?.cancel();
+    widget.auth.removeListener(_onAuthChanged);
     super.dispose();
   }
 
