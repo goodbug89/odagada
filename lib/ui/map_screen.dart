@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
 import '../auth/auth_controller.dart';
+import '../core/constants.dart';
 import '../core/geo/geo_math.dart';
 import '../core/models/lat_lng.dart';
 import '../core/models/lat_lng_bounds.dart';
@@ -14,6 +15,7 @@ import '../friends/invite_link.dart';
 import '../friends/social_repository.dart';
 import '../location/location_source.dart';
 import '../poi/poi_provider.dart';
+import '../poi/research_policy.dart';
 import '../poi/tiled_poi_source.dart';
 import '../saved/saved_place.dart';
 import '../saved/saved_place_repository.dart';
@@ -68,9 +70,9 @@ class _MapScreenState extends State<MapScreen> {
   List<SavedPlace> _savedPlaces = const [];
   Map<String, FriendSave> _friendSaves = const {};
   bool _following = true;
-  // 임계 줌 16 미만이면 일반 POI 검색 자체를 건너뛴다(렌더 게이트와 같은 값).
+  // 임계 줌 미만이면 일반 POI 검색 자체를 건너뛴다(렌더 게이트와 같은 값).
   late final TiledPoiSource _poiSource =
-      TiledPoiSource(widget.registry, minBrowseZoom: 16);
+      TiledPoiSource(widget.registry, minBrowseZoom: ambientPoiMinZoom);
   Set<PlaceCategory> _visibleCategories = PlaceCategory.values.toSet();
 
   Timer? _idleDebounce;
@@ -192,11 +194,12 @@ class _MapScreenState extends State<MapScreen> {
   void _onCameraIdle(LatLngBounds bounds, double zoom) {
     _idleDebounce?.cancel();
     _idleDebounce = Timer(const Duration(milliseconds: 400), () {
-      final last = _lastSearchBounds;
-      final lastZ = _lastSearchZoom;
-      if (last != null && lastZ != null) {
-        final moved = GeoMath.distanceMeters(last.center, bounds.center);
-        if (moved < 30 && (zoom - lastZ).abs() < 0.1) return; // 거의 안 움직이고 줌도 그대로 → 스킵
+      if (!shouldResearch(
+          lastBounds: _lastSearchBounds,
+          lastZoom: _lastSearchZoom,
+          bounds: bounds,
+          zoom: zoom)) {
+        return; // 거의 안 움직이고 줌도 그대로 → 스킵
       }
       _lastSearchBounds = bounds;
       _lastSearchZoom = zoom;

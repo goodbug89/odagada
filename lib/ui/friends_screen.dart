@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import '../friends/friend.dart';
 import '../friends/friend_repository.dart';
 import 'accept_invite_flow.dart';
+import 'toast.dart';
 
 /// 친구 초대·추가·목록 화면. (계정 메뉴로만 진입 → 로그인 상태 가정, uid는 repo가 처리)
 class FriendsScreen extends StatefulWidget {
@@ -44,11 +45,7 @@ class _FriendsScreenState extends State<FriendsScreen> {
     }
   }
 
-  void _toast(String msg) {
-    if (!mounted) return;
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(msg)));
-  }
+  void _toast(String msg) => showToast(context, msg);
 
   Future<void> _createInvite() async {
     try {

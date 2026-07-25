@@ -1,15 +1,13 @@
 import 'package:flutter/material.dart';
 import '../friends/friend.dart';
 import '../friends/friend_repository.dart';
+import 'toast.dart';
 
 /// 초대 토큰을 확인하고 사용자가 승인하면 수락한다. 수락되면 true.
 /// 코드 입력(FriendsScreen)과 딥링크 수신(MapScreen)이 같은 UX를 쓰도록 공유한다.
 Future<bool> runAcceptInviteFlow(
     BuildContext context, FriendRepository repo, String token) async {
-  void toast(String msg) {
-    if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
-  }
+  void toast(String msg) => showToast(context, msg);
 
   final InviteInfo info;
   try {

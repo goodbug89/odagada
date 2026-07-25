@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../core/constants.dart';
 import 'app_user.dart';
 
 /// Supabase Auth를 앱 모델(AppUser)로 노출하는 얇은 컨트롤러.
@@ -31,7 +32,7 @@ class AuthController extends ChangeNotifier {
     return _client.auth.signInWithOAuth(
       OAuthProvider.google,
       redirectTo:
-          kIsWeb ? null : 'io.supabase.odagada://login-callback/',
+          kIsWeb ? null : '$appUriScheme://login-callback/',
     );
   }
 

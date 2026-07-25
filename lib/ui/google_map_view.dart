@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart' as gmap;
+import '../core/constants.dart';
 import '../core/models/lat_lng.dart';
 import '../core/models/lat_lng_bounds.dart';
 import '../core/models/recommendation.dart';
@@ -49,9 +50,6 @@ class _GoogleMapViewState extends State<GoogleMapView> implements MapController 
       '[{"featureType":"poi","stylers":[{"visibility":"off"}]},'
       '{"featureType":"transit","stylers":[{"visibility":"off"}]},'
       '{"featureType":"road","elementType":"labels.icon","stylers":[{"visibility":"off"}]}]';
-
-  // 이 줌 미만이면 일반(주변) POI 점은 그리지 않는다(친구/저장 핀은 항상).
-  static const _ambientMinZoom = 16.0;
 
   // 현재 카메라 상태(오버레이 핀 위치 계산용). onCameraMove로 갱신.
   gmap.LatLng _camTarget = _initialTarget;
@@ -208,7 +206,7 @@ class _GoogleMapViewState extends State<GoogleMapView> implements MapController 
             onTap: () => widget.onPinTap(r.poi),
           ),
         ));
-      } else if (_camZoom >= _ambientMinZoom) {
+      } else if (_camZoom >= ambientPoiMinZoom) {
         // 일반 POI는 임계 줌 이상에서만(축소 시 친구/저장만 보이게).
         pins.add(Positioned(
           left: s.dx - 15, // 원 지름 30의 절반(원 중심 = 기준점)
