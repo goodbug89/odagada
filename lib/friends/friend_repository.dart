@@ -19,7 +19,8 @@ class SupabaseFriendRepository implements FriendRepository {
 
   @override
   Future<({String token, String link})> createInvite() async {
-    final uid = _client.auth.currentUser!.id;
+    final uid = _client.auth.currentUser?.id;
+    if (uid == null) throw StateError('로그인이 필요합니다.');
     final token = generateInviteToken();
     await _client.from('invites').insert({'token': token, 'inviter_id': uid});
     return (token: token, link: buildInviteLink(token));
@@ -50,7 +51,8 @@ class SupabaseFriendRepository implements FriendRepository {
 
   @override
   Future<void> removeFriend(String otherId) async {
-    final uid = _client.auth.currentUser!.id;
+    final uid = _client.auth.currentUser?.id;
+    if (uid == null) throw StateError('로그인이 필요합니다.');
     final (a, b) = canonicalPair(uid, otherId);
     await _client.from('friendships').delete().eq('user_a', a).eq('user_b', b);
   }

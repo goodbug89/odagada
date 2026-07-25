@@ -24,19 +24,42 @@ class OdagadaApp extends StatefulWidget {
 class _OdagadaAppState extends State<OdagadaApp> {
   final AuthController _auth = AuthController();
 
+  // build()가 재실행돼도 http.Client·ProviderRegistry·저장소를 다시 만들지 않도록
+  // initState에서 한 번만 생성해 인스턴스 필드로 보관한다(MapScreen._poiSource가
+  // registry를 캡처하므로 rebuild마다 새 registry가 생기면 기존 캡처가 고아가 되고
+  // http.Client가 leak된다).
+  late final http.Client _httpClient;
+  late final GooglePlacesProvider _placesProvider;
+  late final ProviderRegistry _registry;
+  late final SavedPlaceRepository _savedRepo;
+  late final FriendRepository _friendRepo;
+  late final SocialRepository _socialRepo;
+
+  @override
+  void initState() {
+    super.initState();
+    _httpClient = http.Client();
+    _placesProvider = GooglePlacesProvider(
+      client: _httpClient,
+      apiKey: AppConfig.googleMapsApiKey,
+    );
+    _registry = ProviderRegistry()..register(_placesProvider);
+    _savedRepo = SavedPlaceRepository();
+    _friendRepo = SupabaseFriendRepository();
+    _socialRepo = SupabaseSocialRepository();
+  }
+
   @override
   void dispose() {
     _auth.dispose();
+    _httpClient.close();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final placesProvider = GooglePlacesProvider(
-      client: http.Client(),
-      apiKey: AppConfig.googleMapsApiKey,
-    );
-    final registry = ProviderRegistry()..register(placesProvider);
+    final placesProvider = _placesProvider;
+    final registry = _registry;
 
     final LocationSource locationSource =
         kIsWeb ? const FixedLocationSource() : GeolocatorLocationSource();
@@ -65,9 +88,9 @@ class _OdagadaAppState extends State<OdagadaApp> {
         registry: registry,
         navigationLauncher: NavigationLauncher(),
         mapBuilder: mapBuilder,
-        savedRepo: SavedPlaceRepository(),
-        friendRepo: SupabaseFriendRepository(),
-        socialRepo: SupabaseSocialRepository(),
+        savedRepo: _savedRepo,
+        friendRepo: _friendRepo,
+        socialRepo: _socialRepo,
         textSearch: (query, bias) =>
             placesProvider.searchText(query, bias: bias),
       ),

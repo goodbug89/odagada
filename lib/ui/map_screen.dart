@@ -153,7 +153,7 @@ class _MapScreenState extends State<MapScreen> {
     // GPS는 차 위치(카메라 따라가기)용으로만 사용. 핀은 지도 뷰포트 검색으로 채운다.
     _sub = widget.locationSource.stream().listen((fix) {
       _map?.setCar(LatLng(fix.position.lat, fix.position.lng));
-    });
+    }, onError: (_) {}); // GPS 꺼짐 등 스트림 에러가 unhandled zone error가 되지 않도록
     await _reloadSaved();
   }
 
@@ -169,7 +169,12 @@ class _MapScreenState extends State<MapScreen> {
       _map?.setSavedIds(const {});
       return;
     }
-    final places = await widget.savedRepo.listMine(u.id);
+    List<SavedPlace> places;
+    try {
+      places = await widget.savedRepo.listMine(u.id);
+    } catch (_) {
+      return; // 일시적 실패 → 기존 상태 유지
+    }
     final ids = places.map((p) => p.placeId).whereType<String>().toSet();
     if (mounted) {
       setState(() {
@@ -214,7 +219,14 @@ class _MapScreenState extends State<MapScreen> {
     List<FriendSave> friendSaves = const [];
     try {
       friendSaves = await widget.socialRepo.friendSavesNear(center, radius);
-    } catch (_) {}
+    } catch (e, st) {
+      FlutterError.reportError(FlutterErrorDetails(
+        exception: e,
+        stack: st,
+        library: 'map_screen',
+        context: ErrorDescription('friendSavesNear 조회 실패'),
+      ));
+    }
     if (!mounted || gen != _searchGen) return; // 더 최신 검색이 시작됐으면 이 결과는 버림
     final ids = pois.map((p) => p.id).toSet();
     final savedOverlay = savedPoisInViewport(_savedPlaces, center, radius)
@@ -237,13 +249,20 @@ class _MapScreenState extends State<MapScreen> {
       showLoginSheet(context, onGoogle: widget.auth.signInWithGoogle);
       return;
     }
-    if (_savedIds.contains(poi.id)) {
-      await widget.savedRepo.deleteByPlaceId(ownerId: u.id, placeId: poi.id);
-    } else {
-      final memo = await showMemoSheet(context, placeName: poi.name);
-      if (memo == null) return; // 시트 닫음 → 저장 취소
-      await widget.savedRepo.save(
-          ownerId: u.id, poi: poi, memo: memo.isEmpty ? null : memo);
+    try {
+      if (_savedIds.contains(poi.id)) {
+        await widget.savedRepo.deleteByPlaceId(ownerId: u.id, placeId: poi.id);
+      } else {
+        final memo = await showMemoSheet(context, placeName: poi.name);
+        if (memo == null) return; // 시트 닫음 → 저장 취소
+        await widget.savedRepo.save(
+            ownerId: u.id, poi: poi, memo: memo.isEmpty ? null : memo);
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(const SnackBar(content: Text('저장에 실패했어요.')));
+      }
     }
     await _reloadSaved();
   }

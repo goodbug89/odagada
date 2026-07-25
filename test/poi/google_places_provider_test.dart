@@ -144,6 +144,37 @@ void main() {
     expect(pois.single.weekdayHours, hasLength(2));
   });
 
+  test('location이 없는 항목은 건너뛰고 나머지는 정상 반환한다', () async {
+    final mock = MockHttpClient();
+    when(() => mock.post(any(),
+            headers: any(named: 'headers'), body: any(named: 'body')))
+        .thenAnswer((_) async => http.Response.bytes(
+              utf8.encode(jsonEncode({
+                'places': [
+                  {
+                    // location 누락 → 이 항목만 스킵
+                    'id': 'broken-1',
+                    'displayName': {'text': '깨진 항목'},
+                  },
+                  {
+                    'id': 'place-2',
+                    'displayName': {'text': '정상 항목'},
+                    'location': {'latitude': 37.5, 'longitude': 127.0},
+                    'primaryTypeDisplayName': {'text': '카페'},
+                  },
+                ],
+              })),
+              200,
+            ));
+
+    final provider = GooglePlacesProvider(client: mock, apiKey: 'TEST');
+    final pois = await provider.nearby(loc(), radiusMeters: 500);
+
+    expect(pois.length, 1);
+    expect(pois.single.id, 'place-2');
+    expect(pois.single.name, '정상 항목');
+  });
+
   test('searchText는 textQuery로 검색해 Poi 목록을 준다', () async {
     final mock = MockHttpClient();
     when(() => mock.post(any(),

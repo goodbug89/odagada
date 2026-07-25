@@ -30,17 +30,20 @@ class GooglePlacesProvider implements PoiProvider {
   @override
   String get displayName => '맛집';
 
+  /// nearby()·searchText() 공통 요청 헤더(둘 다 동일한 필드마스크 사용).
+  Map<String, String> get _headers => {
+        'Content-Type': 'application/json',
+        'X-Goog-Api-Key': apiKey,
+        'X-Goog-FieldMask':
+            'places.id,places.displayName,places.location,places.primaryType,places.primaryTypeDisplayName,places.formattedAddress,places.nationalPhoneNumber,places.regularOpeningHours',
+      };
+
   @override
   Future<List<Poi>> nearby(LocationEvent loc,
       {required double radiusMeters}) async {
     final res = await client.post(
       Uri.parse(_endpoint),
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Goog-Api-Key': apiKey,
-        'X-Goog-FieldMask':
-            'places.id,places.displayName,places.location,places.primaryType,places.primaryTypeDisplayName,places.formattedAddress,places.nationalPhoneNumber,places.regularOpeningHours',
-      },
+      headers: _headers,
       body: jsonEncode({
         'includedTypes': const [
           'restaurant', 'cafe', 'bar', 'bakery',
@@ -69,6 +72,7 @@ class GooglePlacesProvider implements PoiProvider {
     final places = (body['places'] as List?) ?? const [];
     return places
         .map((p) => _toPoi(loc.position, p as Map<String, dynamic>))
+        .whereType<Poi>()
         .toList();
   }
 
@@ -78,12 +82,7 @@ class GooglePlacesProvider implements PoiProvider {
   Future<List<Poi>> searchText(String query, {LatLng? bias}) async {
     final res = await client.post(
       Uri.parse(_textEndpoint),
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Goog-Api-Key': apiKey,
-        'X-Goog-FieldMask':
-            'places.id,places.displayName,places.location,places.primaryType,places.primaryTypeDisplayName,places.formattedAddress,places.nationalPhoneNumber,places.regularOpeningHours',
-      },
+      headers: _headers,
       body: jsonEncode({
         'textQuery': query,
         if (bias != null)
@@ -102,15 +101,21 @@ class GooglePlacesProvider implements PoiProvider {
     }
     final body = jsonDecode(utf8.decode(res.bodyBytes)) as Map<String, dynamic>;
     final places = (body['places'] as List?) ?? const [];
-    return places.map((p) => _toPoi(bias, p as Map<String, dynamic>)).toList();
+    return places
+        .map((p) => _toPoi(bias, p as Map<String, dynamic>))
+        .whereType<Poi>()
+        .toList();
   }
 
-  Poi _toPoi(LatLng? ref, Map<String, dynamic> p) {
-    final l = p['location'] as Map<String, dynamic>;
-    final pos = LatLng(
-      (l['latitude'] as num).toDouble(),
-      (l['longitude'] as num).toDouble(),
-    );
+  /// 항목 하나를 [Poi]로 변환. location(위경도)이 없거나 잘못된 형식이면
+  /// 이 항목만 건너뛴다(null 반환) — 배치 전체를 실패시키지 않기 위함.
+  Poi? _toPoi(LatLng? ref, Map<String, dynamic> p) {
+    final l = p['location'];
+    if (l is! Map<String, dynamic>) return null;
+    final lat = l['latitude'];
+    final lng = l['longitude'];
+    if (lat is! num || lng is! num) return null;
+    final pos = LatLng(lat.toDouble(), lng.toDouble());
     return Poi(
       id: (p['id'] as String?) ?? '${pos.lat},${pos.lng}',
       name: (p['displayName']?['text'] as String?) ?? '이름 없음',

@@ -33,6 +33,7 @@ class _SearchScreenState extends State<SearchScreen> {
   bool _loading = false;
   bool _searched = false;
   String? _error;
+  int _searchGen = 0;
 
   @override
   void initState() {
@@ -56,22 +57,23 @@ class _SearchScreenState extends State<SearchScreen> {
   Future<void> _search() async {
     final q = _controller.text.trim();
     if (q.isEmpty) return;
+    final gen = ++_searchGen;
     setState(() {
       _loading = true;
       _error = null;
     });
     try {
       final r = await widget.textSearch(q, widget.bias);
-      if (mounted) {
-        setState(() {
-          _results = r;
-          _searched = true;
-        });
-      }
+      if (!mounted || gen != _searchGen) return; // 더 최신 검색이 시작됐으면 이 결과는 버림
+      setState(() {
+        _results = r;
+        _searched = true;
+      });
     } catch (_) {
-      if (mounted) setState(() => _error = '검색에 실패했어요. 잠시 후 다시 시도해 주세요.');
+      if (!mounted || gen != _searchGen) return;
+      setState(() => _error = '검색에 실패했어요. 잠시 후 다시 시도해 주세요.');
     } finally {
-      if (mounted) setState(() => _loading = false);
+      if (mounted && gen == _searchGen) setState(() => _loading = false);
     }
   }
 
@@ -83,10 +85,17 @@ class _SearchScreenState extends State<SearchScreen> {
     }
     final memo = await showMemoSheet(context, placeName: poi.name);
     if (memo == null) return;
-    await widget.savedRepo.save(
-        ownerId: u.id, poi: poi, memo: memo.isEmpty ? null : memo);
-    await _loadSaved();
-    await widget.onChanged();
+    try {
+      await widget.savedRepo.save(
+          ownerId: u.id, poi: poi, memo: memo.isEmpty ? null : memo);
+      await _loadSaved();
+      await widget.onChanged();
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(const SnackBar(content: Text('저장에 실패했어요.')));
+      }
+    }
   }
 
   @override

@@ -15,7 +15,11 @@ Future<void> main() async {
     publishableKey: AppConfig.supabaseAnonKey,
   );
   if (kIsWeb) {
-    await loadGoogleMapsJs(AppConfig.googleMapsApiKey);
+    try {
+      await loadGoogleMapsJs(AppConfig.googleMapsApiKey);
+    } catch (_) {
+      // 광고 차단기/CSP/잘못된 키 등으로 로드 실패해도 앱은 떠야 한다(백지 방지).
+    }
   }
   runApp(const OdagadaApp());
 }
