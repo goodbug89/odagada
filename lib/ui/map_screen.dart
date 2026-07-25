@@ -81,10 +81,12 @@ class _MapScreenState extends State<MapScreen> {
   int _searchGen = 0;
   StreamSubscription<Uri>? _linkSub;
   String? _pendingInviteToken; // 미로그인 상태로 받은 초대(로그인 후 이어서 수락)
+  String? _lastAuthUserId; // 로그인/로그아웃 감지용(토큰 갱신 알림에는 재로딩 안 함)
 
   @override
   void initState() {
     super.initState();
+    _lastAuthUserId = widget.auth.user?.id; // _start()가 초기 저장 로딩을 하므로 중복 방지
     _start();
     _initDeepLinks();
     widget.auth.addListener(_onAuthChanged);
@@ -118,8 +120,14 @@ class _MapScreenState extends State<MapScreen> {
     _acceptInvite(token);
   }
 
+  /// 로그인/로그아웃 시 내 저장·오버레이를 갱신하고,
   /// 로그인이 완료되면 보류해 둔 초대를 이어서 수락한다.
   void _onAuthChanged() {
+    final uid = widget.auth.user?.id;
+    if (uid != _lastAuthUserId) {
+      _lastAuthUserId = uid; // 계정이 실제로 바뀐 경우에만(토큰 갱신 알림 제외)
+      _reloadSaved(); // 로그인→내 저장 표시, 로그아웃→저장·오버레이 제거
+    }
     final token = _pendingInviteToken;
     if (token == null || widget.auth.user == null) return;
     _pendingInviteToken = null;
@@ -128,7 +136,11 @@ class _MapScreenState extends State<MapScreen> {
 
   Future<void> _acceptInvite(String token) async {
     if (!mounted) return;
-    await runAcceptInviteFlow(context, widget.friendRepo, token);
+    final ok = await runAcceptInviteFlow(context, widget.friendRepo, token);
+    if (!ok || !mounted) return;
+    // 새 친구의 저장이 지도에 바로 뜨도록 현재 영역 재검색.
+    final b = _lastBounds, z = _lastZoom;
+    if (b != null && z != null) _runSearch(b, z);
   }
 
   Future<void> _start() async {
