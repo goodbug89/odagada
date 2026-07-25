@@ -60,9 +60,11 @@ class _KakaoMapViewState extends State<KakaoMapView> implements MapController {
   }
 
   @override
-  void moveCamera(LatLng center) {
-    _web.runJavaScript('window.moveCamera(${center.lat}, ${center.lng});');
-  }
+  void setCar(LatLng car) {} // 레거시(구글로 전환됨) — 미사용
+  @override
+  void recenter() {} // 레거시 — 미사용
+  @override
+  void stopFollowing() {} // 레거시 — 미사용
 
   @override
   void setPins(List<Recommendation> recs) {
@@ -78,6 +80,12 @@ class _KakaoMapViewState extends State<KakaoMapView> implements MapController {
     final json = jsonEncode(items);
     _web.runJavaScript('window.setPins(${jsonEncode(json)});');
   }
+
+  @override
+  void setSavedIds(Set<String> ids) {} // 레거시(구글로 전환됨) — 미사용
+
+  @override
+  void setFriendCounts(Map<String, int> byPlaceId) {} // 레거시 미사용
 
   @override
   Widget build(BuildContext context) => WebViewWidget(controller: _web);

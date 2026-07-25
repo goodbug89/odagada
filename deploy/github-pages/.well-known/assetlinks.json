@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.odagada.app",
+      "sha256_cert_fingerprints": [
+        "31:28:FD:06:95:7F:35:EF:EA:9F:1D:E3:8D:9C:DA:12:44:25:68:47:39:56:DC:34:17:34:DE:F0:7A:3D:F8:DC"
+      ]
+    }
+  }
+]

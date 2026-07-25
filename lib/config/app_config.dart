@@ -21,4 +21,28 @@ class AppConfig {
     }
     return key;
   }
+
+  static String get googleMapsApiKey {
+    final key = dotenv.env['GOOGLE_MAPS_API_KEY'];
+    if (key == null || key.isEmpty) {
+      throw StateError('GOOGLE_MAPS_API_KEY가 .env에 없습니다.');
+    }
+    return key;
+  }
+
+  static String get supabaseUrl {
+    final v = dotenv.env['SUPABASE_URL'];
+    if (v == null || v.isEmpty) {
+      throw StateError('SUPABASE_URL이 .env에 없습니다.');
+    }
+    return v;
+  }
+
+  static String get supabaseAnonKey {
+    final v = dotenv.env['SUPABASE_ANON_KEY'];
+    if (v == null || v.isEmpty) {
+      throw StateError('SUPABASE_ANON_KEY가 .env에 없습니다.');
+    }
+    return v;
+  }
 }
